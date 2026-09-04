@@ -111,13 +111,13 @@ public class PlaneDebugHud : MonoBehaviour
 
         float width = Screen.width * 0.5f;
         float x = Screen.width * 0.5f - width * 0.5f;
-        float filled = width * bossManager.Boss.NormalizedTime;
+        float filled = width * bossManager.CurrentBoss.NormalizedTime;
 
         DrawRect(new Rect(x, 24f, width, 22f), new Color(0.15f, 0.15f, 0.18f));
         DrawRect(new Rect(x, 24f, filled, 22f), new Color(0.85f, 0.33f, 0.31f));
 
         GUI.Label(new Rect(x, 50f, width, 40f),
-            "BOSS  " + bossManager.Boss.TimeRemaining.ToString("F1"), style);
+            "BOSS  " + bossManager.CurrentBoss.TimeRemaining.ToString("F1"), style);
     }
     private void DrawRect(Rect rect, Color color)
     {

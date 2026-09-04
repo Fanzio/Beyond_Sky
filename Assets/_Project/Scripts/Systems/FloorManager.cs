@@ -36,8 +36,6 @@ public class FloorManager : MonoBehaviour
     {
         new Floor { floorName = "Citta", coinMultiplier = 1,
             backgroundColor = new Color(0.18f, 0.36f, 0.54f) },
-        new Floor { floorName = "Grattacieli", coinMultiplier = 2,
-            backgroundColor = new Color(0.20f, 0.42f, 0.68f) },
         new Floor { floorName = "Cielo", coinMultiplier = 3,
             backgroundColor = new Color(0.25f, 0.55f, 0.85f) },
         new Floor { floorName = "Spazio", coinMultiplier = 5,
@@ -126,4 +124,4 @@ public class FloorManager : MonoBehaviour
         targetCamera.backgroundColor = Color.Lerp(
             targetCamera.backgroundColor, target, colourBlendSpeed * deltaTime);
     }
-}
+}   

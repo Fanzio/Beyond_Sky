@@ -22,6 +22,7 @@ public class Chunk : MonoBehaviour
     private Pickup[] pickups;
     private Obstacle[] obstacles;
     private MovingObstacle[] movingObstacles;
+    private VerticalObstacle[] verticalObstacles;
 
     public float MinDistance
     {
@@ -41,10 +42,15 @@ public class Chunk : MonoBehaviour
         pickups = GetComponentsInChildren<Pickup>(true);
         obstacles = GetComponentsInChildren<Obstacle>(true);
         movingObstacles = GetComponentsInChildren<MovingObstacle>(true);
+        verticalObstacles = GetComponentsInChildren<VerticalObstacle>(true);
 
         for (int i = 0; i < movingObstacles.Length; i++)
         {
             movingObstacles[i].CaptureStart();
+        }
+        for (int i = 0; i < verticalObstacles.Length; i++)
+        {
+            verticalObstacles[i].CaptureStart();
         }
     }
     private void OnEnable()
@@ -60,6 +66,10 @@ public class Chunk : MonoBehaviour
         for (int i = 0; i < movingObstacles.Length; i++)
         {
             movingObstacles[i].ResetPosition();
+        }
+        for (int i = 0; i < verticalObstacles.Length; i++)
+        {
+            verticalObstacles[i].ResetPosition();
         }
     }
 }

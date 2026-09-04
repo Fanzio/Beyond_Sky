@@ -1,0 +1,278 @@
+using UnityEngine;
+
+public enum BossLifeState
+{
+    Idle,
+    Enter,
+    Fighting,
+    Defeated
+}
+
+// Shared lifecycle for every floor boss.
+// It owns entry, the current timer-based health system, hit feedback and defeat.
+public abstract class BossBase : MonoBehaviour
+{
+    [Header("Visual")]
+    [SerializeField] private SpriteRenderer bodyRenderer;
+    [SerializeField] private Color normalColor = Color.white;
+    [SerializeField] private Color hitColor = Color.white;
+    [SerializeField] private float hitFlashTime = 0.12f;
+
+    [Header("Fight length")]
+    [SerializeField] private float totalTime = 24f;
+    [SerializeField] private float timeLostPerBullet = 3f;
+
+    [Header("Entry")]
+    [SerializeField] private float enterSpeed = 22f;
+    [SerializeField] private float holdX = 12f;
+
+    [Header("Defeat")]
+    [SerializeField] private float defeatDuration = 1.2f;
+    [SerializeField] private float defeatSpinSpeed = 420f;
+    [SerializeField] private float defeatFallSpeed = 9f;
+
+    private BossLifeState lifeState = BossLifeState.Idle;
+    private Transform target;
+    private BulletPool normalBulletPool;
+    private float lifeStateTimer;
+    private float timeRemaining;
+    private float hitFlashTimer;
+    private bool isFinished;
+
+    public bool IsFinished
+    {
+        get { return isFinished; }
+    }
+
+    public bool IsFighting
+    {
+        get { return lifeState == BossLifeState.Fighting; }
+    }
+
+    public float TimeRemaining
+    {
+        get { return timeRemaining; }
+    }
+
+    public float TotalTime
+    {
+        get { return totalTime; }
+    }
+
+    public float NormalizedTime
+    {
+        get
+        {
+            float safeTotal = Mathf.Max(0.0001f, totalTime);
+            return Mathf.Clamp01(timeRemaining / safeTotal);
+        }
+    }
+
+    protected Transform Target
+    {
+        get { return target; }
+    }
+
+    protected BulletPool NormalBulletPool
+    {
+        get { return normalBulletPool; }
+    }
+
+    protected Color NormalColor
+    {
+        get { return normalColor; }
+    }
+
+    public void Setup(Transform playerTarget, BulletPool bulletPool)
+    {
+        target = playerTarget;
+        normalBulletPool = bulletPool;
+        OnSetupComplete();
+    }
+
+    public void Activate(Vector3 startPosition)
+    {
+        transform.position = startPosition;
+        transform.rotation = Quaternion.identity;
+
+        timeRemaining = totalTime;
+        hitFlashTimer = 0f;
+        isFinished = false;
+        lifeStateTimer = 0f;
+        lifeState = BossLifeState.Enter;
+
+        OnBossActivated();
+        ApplyBodyColor(normalColor);
+        gameObject.SetActive(true);
+    }
+
+    public void TakeBulletHit()
+    {
+        if (IsFighting == false)
+        {
+            return;
+        }
+
+        timeRemaining = timeRemaining - timeLostPerBullet;
+        hitFlashTimer = hitFlashTime;
+
+        if (timeRemaining > 0f)
+        {
+            return;
+        }
+
+        BeginDefeat();
+    }
+
+    protected virtual void Update()
+    {
+        float deltaTime = Time.deltaTime;
+        lifeStateTimer = lifeStateTimer + deltaTime;
+
+        if (lifeState == BossLifeState.Enter)
+        {
+            UpdateEntry(deltaTime);
+            UpdateVisual(deltaTime);
+            return;
+        }
+
+        if (lifeState == BossLifeState.Defeated)
+        {
+            UpdateDefeat(deltaTime);
+            return;
+        }
+
+        if (lifeState != BossLifeState.Fighting)
+        {
+            return;
+        }
+
+        DrainTimer(deltaTime);
+
+        if (lifeState != BossLifeState.Fighting)
+        {
+            return;
+        }
+
+        TickFight(deltaTime);
+        UpdateVisual(deltaTime);
+    }
+
+    protected virtual void OnSetupComplete()
+    {
+    }
+
+    protected virtual void OnBossActivated()
+    {
+    }
+
+    protected virtual void OnFightStarted()
+    {
+    }
+
+    protected virtual void OnDefeatStarted()
+    {
+    }
+
+    protected abstract void TickFight(float deltaTime);
+
+    protected virtual Color GetFightColor()
+    {
+        return normalColor;
+    }
+
+    protected void MoveBy(float deltaX, float deltaY)
+    {
+        Vector3 position = transform.position;
+        position.x = position.x + deltaX;
+        position.y = position.y + deltaY;
+        transform.position = position;
+    }
+
+    protected void SetY(float y)
+    {
+        Vector3 position = transform.position;
+        position.y = y;
+        transform.position = position;
+    }
+
+    private void UpdateEntry(float deltaTime)
+    {
+        MoveBy(-enterSpeed * deltaTime, 0f);
+
+        if (transform.position.x > holdX)
+        {
+            return;
+        }
+
+        Vector3 position = transform.position;
+        position.x = holdX;
+        transform.position = position;
+
+        lifeState = BossLifeState.Fighting;
+        lifeStateTimer = 0f;
+        OnFightStarted();
+    }
+
+    private void DrainTimer(float deltaTime)
+    {
+        timeRemaining = timeRemaining - deltaTime;
+
+        if (timeRemaining > 0f)
+        {
+            return;
+        }
+
+        BeginDefeat();
+    }
+
+    private void BeginDefeat()
+    {
+        if (lifeState == BossLifeState.Defeated)
+        {
+            return;
+        }
+
+        timeRemaining = 0f;
+        lifeState = BossLifeState.Defeated;
+        lifeStateTimer = 0f;
+        ApplyBodyColor(normalColor);
+        OnDefeatStarted();
+    }
+
+    private void UpdateDefeat(float deltaTime)
+    {
+        transform.Rotate(0f, 0f, defeatSpinSpeed * deltaTime);
+        MoveBy(-defeatFallSpeed * 0.4f * deltaTime, -defeatFallSpeed * deltaTime);
+
+        if (lifeStateTimer < defeatDuration)
+        {
+            return;
+        }
+
+        isFinished = true;
+        gameObject.SetActive(false);
+    }
+
+    private void UpdateVisual(float deltaTime)
+    {
+        if (hitFlashTimer > 0f)
+        {
+            hitFlashTimer = hitFlashTimer - deltaTime;
+            ApplyBodyColor(hitColor);
+            return;
+        }
+
+        ApplyBodyColor(GetFightColor());
+    }
+
+    private void ApplyBodyColor(Color color)
+    {
+        if (bodyRenderer == null)
+        {
+            return;
+        }
+
+        bodyRenderer.color = color;
+    }
+}
