@@ -1,10 +1,6 @@
 using UnityEngine;
 
-// One hit and the run is over, unless the dodge is active or a shield absorbs it.
-//
-// The check is a SWEPT cast, not an overlap test. Obstacles slide left fast enough that
-// on a slow phone they travel more than a unit between frames, so asking "am I touching
-// something right now" would let the plane pass clean through them.
+// Uses a swept cast because fast obstacles can cross the plane between two frames.
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlaneCollision : MonoBehaviour
 {
@@ -25,50 +21,62 @@ public class PlaneCollision : MonoBehaviour
         body.bodyType = RigidbodyType2D.Kinematic;
         body.simulated = true;
     }
+
     private void Update()
     {
-        if (gameManager.IsGameOver)
+        if (ShouldIgnoreHit())
         {
             return;
         }
-        if (gameManager.IsAscending)
-        {
-            return;
-        }
-        if (planeDodge.IsInvulnerable)
-        {
-            return;
-        }
-        if (planeShield.IsInvulnerable)
-        {
-            return;
-        }
+
         if (HasHitObstacle() == false)
         {
             return;
         }
+
         TakeHit();
     }
+
     public void TakeHit()
     {
-        if (gameManager.IsGameOver)
+        if (ShouldIgnoreHit())
         {
             return;
         }
-        if (planeDodge.IsInvulnerable)
-        {
-            return;
-        }
-        if (planeShield.IsInvulnerable)
-        {
-            return;
-        }
+
         if (planeShield.ConsumeShield())
         {
             return;
         }
+
         gameManager.GameOver();
     }
+
+    private bool ShouldIgnoreHit()
+    {
+        if (gameManager.IsGameOver)
+        {
+            return true;
+        }
+
+        if (gameManager.IsAscending)
+        {
+            return true;
+        }
+
+        if (planeDodge.IsInvulnerable)
+        {
+            return true;
+        }
+
+        if (planeShield.IsInvulnerable)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private bool HasHitObstacle()
     {
         Vector2 relativeStep = new Vector2(
@@ -87,6 +95,7 @@ public class PlaneCollision : MonoBehaviour
 
         return hit.collider != null;
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;

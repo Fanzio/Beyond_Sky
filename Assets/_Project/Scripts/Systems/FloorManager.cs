@@ -3,20 +3,35 @@ using UnityEngine;
 [System.Serializable]
 public class Floor
 {
-    public string floorName = "Floor";
-    public int coinMultiplier = 1;
-    public Color backgroundColor = new Color(0.18f, 0.36f, 0.54f);
+    [SerializeField] private string floorName = "Floor";
+    [SerializeField] private int coinMultiplier = 1;
+    [SerializeField] private Color backgroundColor = new Color(0.18f, 0.36f, 0.54f);
+
+    public string FloorName
+    {
+        get { return floorName; }
+    }
+
+    public int CoinMultiplier
+    {
+        get { return coinMultiplier; }
+    }
+
+    public Color BackgroundColor
+    {
+        get { return backgroundColor; }
+    }
+
+    public Floor(string name, int multiplier, Color color)
+    {
+        floorName = name;
+        coinMultiplier = multiplier;
+        backgroundColor = color;
+    }
 }
 
-// Floors are earned, not reached. Distance no longer promotes the player: it only says
-// how close the next boss is, and beating that boss is what moves you up.
-//
-// This is the difference between a multiplier that arrives because you waited and one
-// that arrives because you won. The second is worth far more, and it costs nothing extra
-// to build once the boss exists.
-//
-// The distance counter restarts on every floor, so the boss always comes after the same
-// stretch of play no matter how far into the run you are.
+// Advances floors only after a boss defeat and restarts the floor-distance counter so
+// every floor requires the same configured travel before its next boss.
 public class FloorManager : MonoBehaviour
 {
     [Header("References")]
@@ -34,12 +49,9 @@ public class FloorManager : MonoBehaviour
     [SerializeField]
     private Floor[] floors = new Floor[]
     {
-        new Floor { floorName = "Citta", coinMultiplier = 1,
-            backgroundColor = new Color(0.18f, 0.36f, 0.54f) },
-        new Floor { floorName = "Cielo", coinMultiplier = 3,
-            backgroundColor = new Color(0.25f, 0.55f, 0.85f) },
-        new Floor { floorName = "Spazio", coinMultiplier = 5,
-            backgroundColor = new Color(0.04f, 0.03f, 0.12f) }
+        new Floor("Citta", 1, new Color(0.18f, 0.36f, 0.54f)),
+        new Floor("Cielo", 3, new Color(0.25f, 0.55f, 0.85f)),
+        new Floor("Spazio", 5, new Color(0.04f, 0.03f, 0.12f))
     };
 
     public event System.Action<int> FloorAdvanced;
@@ -51,48 +63,42 @@ public class FloorManager : MonoBehaviour
     {
         get { return currentFloorIndex; }
     }
+
     public string CurrentFloorName
     {
-        get { return floors[currentFloorIndex].floorName; }
+        get { return floors[currentFloorIndex].FloorName; }
     }
+
     public int CoinMultiplier
     {
-        get { return floors[currentFloorIndex].coinMultiplier; }
+        get { return floors[currentFloorIndex].CoinMultiplier; }
     }
+
     public float DistanceInFloor
     {
         get { return worldScroller.DistanceTravelled - floorStartDistance; }
     }
+
     public float DistanceToBoss
     {
         get { return Mathf.Max(0f, distanceToBoss - DistanceInFloor); }
     }
+
     public bool IsBossDue
     {
         get { return DistanceInFloor >= distanceToBoss; }
     }
+
     public bool IsTopFloor
     {
         get { return currentFloorIndex >= floors.Length - 1; }
     }
+
     public float DisplayedAltitude
     {
         get { return worldScroller.DistanceTravelled * metresPerUnit; }
     }
 
-    private void Start()
-    {
-        currentFloorIndex = 0;
-        floorStartDistance = worldScroller.DistanceTravelled;
-        targetCamera.backgroundColor = floors[0].backgroundColor;
-    }
-    private void Update()
-    {
-        BlendBackground(Time.deltaTime);
-    }
-
-    // Called when a boss goes down. On the top floor there is nowhere left to climb, so
-    // the run simply keeps going and the next boss is queued instead.
     public void NotifyBossDefeated()
     {
         ResetFloorDistance();
@@ -110,18 +116,28 @@ public class FloorManager : MonoBehaviour
         }
     }
 
-    // Called again when the ascension ends. The floor is promoted at the START of the
-    // climb, but the world keeps scrolling throughout it, so those seconds would count
-    // against the new floor and bring its boss forward by a good chunk of the distance.
     public void ResetFloorDistance()
     {
         floorStartDistance = worldScroller.DistanceTravelled;
     }
+
+    private void Start()
+    {
+        currentFloorIndex = 0;
+        floorStartDistance = worldScroller.DistanceTravelled;
+        targetCamera.backgroundColor = floors[0].BackgroundColor;
+    }
+
+    private void Update()
+    {
+        BlendBackground(Time.deltaTime);
+    }
+
     private void BlendBackground(float deltaTime)
     {
-        Color target = floors[currentFloorIndex].backgroundColor;
+        Color target = floors[currentFloorIndex].BackgroundColor;
 
         targetCamera.backgroundColor = Color.Lerp(
             targetCamera.backgroundColor, target, colourBlendSpeed * deltaTime);
     }
-}   
+}

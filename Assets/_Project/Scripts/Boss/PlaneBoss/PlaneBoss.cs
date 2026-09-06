@@ -74,7 +74,7 @@ public class PlaneBoss : BossBase
     [Header("Recover")]
     [SerializeField] private float recoverDuration = 0.7f;
 
-    [Header("Optional muzzle")]
+    [Header("Muzzle")]
     [SerializeField] private Transform muzzle;
 
     private BossState attackState = BossState.Waiting;
@@ -82,14 +82,17 @@ public class PlaneBoss : BossBase
     private int attackBagIndex;
     private float stateTimer;
     private float burstShotTimer;
-    private float summonTimer;
-    private int summonIndex;
-    private EnemyBase activeSummonedPlane;
-    private bool summonSequenceActive;
+    private BossReinforcementSequence reinforcementSequence =
+        new BossReinforcementSequence();
     private bool openingBurstUsed;
 
     protected override void OnSetupComplete()
     {
+        if (muzzle == null)
+        {
+            Debug.LogWarning("PlaneBoss: Muzzle non assegnato.", this);
+        }
+
         if (heavyBulletPool == null)
         {
             Debug.LogWarning("CityBoss: heavyBulletPool non assegnato, "
@@ -108,10 +111,7 @@ public class PlaneBoss : BossBase
         attackState = BossState.Waiting;
         stateTimer = 0f;
         burstShotTimer = 0f;
-        summonTimer = 0f;
-        summonIndex = 0;
-        activeSummonedPlane = null;
-        summonSequenceActive = false;
+        reinforcementSequence.Stop();
         openingBurstUsed = false;
         BuildRuntimeAttackBag();
     }
@@ -123,7 +123,7 @@ public class PlaneBoss : BossBase
 
     protected override void TickFight(float deltaTime)
     {
-        UpdateSummonSequence(deltaTime);
+        reinforcementSequence.Tick(deltaTime);
         stateTimer = stateTimer + deltaTime;
 
         if (attackState == BossState.BurstAlign)
@@ -170,25 +170,24 @@ public class PlaneBoss : BossBase
 
     protected override void OnDefeatStarted()
     {
-        summonSequenceActive = false;
-        activeSummonedPlane = null;
+        reinforcementSequence.Stop();
     }
 
     protected override Color GetFightColor()
     {
         if (attackState == BossState.BurstTelegraph)
         {
-            return FlashBetween(NormalColor, burstTelegraphColor);
+            return FlashBetween(NormalColor, burstTelegraphColor, flashSpeed);
         }
 
         if (attackState == BossState.HeavyTelegraph)
         {
-            return FlashBetween(NormalColor, heavyTelegraphColor);
+            return FlashBetween(NormalColor, heavyTelegraphColor, flashSpeed);
         }
 
         if (attackState == BossState.SummonTelegraph)
         {
-            return FlashBetween(NormalColor, summonTelegraphColor);
+            return FlashBetween(NormalColor, summonTelegraphColor, flashSpeed);
         }
 
         return NormalColor;
@@ -196,7 +195,7 @@ public class PlaneBoss : BossBase
 
     private void UpdateBurstAlign(float deltaTime)
     {
-        TrackPlayer(burstAlignSpeed, deltaTime);
+        TrackPointToTargetY(muzzle, burstAlignSpeed, minY, maxY, deltaTime);
 
         if (stateTimer < burstAlignDuration)
         {
@@ -220,7 +219,7 @@ public class PlaneBoss : BossBase
 
     private void UpdateBurstFire(float deltaTime)
     {
-        TrackPlayer(burstTrackSpeed, deltaTime);
+        TrackPointToTargetY(muzzle, burstTrackSpeed, minY, maxY, deltaTime);
         burstShotTimer = burstShotTimer + deltaTime;
 
         float safeInterval = Mathf.Max(0.05f, burstShotInterval);
@@ -241,7 +240,7 @@ public class PlaneBoss : BossBase
 
     private void UpdateHeavyAlign(float deltaTime)
     {
-        TrackPlayer(heavyAlignSpeed, deltaTime);
+        TrackPointToTargetY(muzzle, heavyAlignSpeed, minY, maxY, deltaTime);
 
         if (stateTimer < heavyAlignDuration)
         {
@@ -297,7 +296,7 @@ public class PlaneBoss : BossBase
             nextAttack = TakeNextBagAttack();
         }
 
-        if (nextAttack == BossAttack.SummonPlanes && summonSequenceActive)
+        if (nextAttack == BossAttack.SummonPlanes && reinforcementSequence.IsActive)
         {
             nextAttack = BossAttack.TrackingBurst;
         }
@@ -373,18 +372,6 @@ public class PlaneBoss : BossBase
         attackBagIndex = 0;
     }
 
-    private void TrackPlayer(float speed, float deltaTime)
-    {
-        if (Target == null)
-        {
-            return;
-        }
-
-        float targetY = Mathf.Clamp(Target.position.y, minY, maxY);
-        float nextY = Mathf.MoveTowards(transform.position.y, targetY, speed * deltaTime);
-        SetY(nextY);
-    }
-
     private void FireNormalBullet()
     {
         FireFromPool(NormalBulletPool, normalBulletSpeed);
@@ -409,106 +396,19 @@ public class PlaneBoss : BossBase
             return;
         }
 
-        bullet.Launch(GetMuzzlePosition(), Vector2.left, speed);
-    }
-
-    private Vector3 GetMuzzlePosition()
-    {
-        if (muzzle != null)
-        {
-            return muzzle.position;
-        }
-
-        return transform.position;
+        bullet.Launch(GetPointPosition(muzzle), Vector2.left, speed);
     }
 
     private void StartSummonSequence()
     {
-        if (summonCount <= 0)
-        {
-            return;
-        }
-
-        summonIndex = 0;
-        summonTimer = 0f;
-        activeSummonedPlane = null;
-        summonSequenceActive = true;
-        TrySpawnNextPlane();
-    }
-
-    private void UpdateSummonSequence(float deltaTime)
-    {
-        if (summonSequenceActive == false)
-        {
-            return;
-        }
-
-        if (activeSummonedPlane != null)
-        {
-            if (activeSummonedPlane.gameObject.activeSelf)
-            {
-                return;
-            }
-
-            activeSummonedPlane = null;
-            summonTimer = 0f;
-        }
-
-        if (summonIndex >= summonCount)
-        {
-            summonSequenceActive = false;
-            return;
-        }
-
-        summonTimer = summonTimer + deltaTime;
-
-        if (summonTimer < summonInterval)
-        {
-            return;
-        }
-
-        summonTimer = 0f;
-        TrySpawnNextPlane();
-    }
-
-    private void TrySpawnNextPlane()
-    {
-        if (summonIndex >= summonCount)
-        {
-            return;
-        }
-
-        float progress = 0.5f;
-
-        if (summonCount > 0)
-        {
-            progress = (summonIndex + 0.5f) / summonCount;
-        }
-
-        float spawnY = Mathf.Lerp(summonMinY, summonMaxY, progress);
-        Vector3 spawnPosition = new Vector3(summonSpawnX, spawnY, 0f);
-
-        if (enemySpawner == null || enemyPlanePrefab == null)
-        {
-            summonSequenceActive = false;
-            return;
-        }
-
-        EnemyBase spawnedPlane = enemySpawner.SpawnForBoss(enemyPlanePrefab, spawnPosition);
-
-        if (spawnedPlane == null)
-        {
-            return;
-        }
-
-        activeSummonedPlane = spawnedPlane;
-        summonIndex = summonIndex + 1;
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
+        reinforcementSequence.BeginSingle(
+            enemySpawner,
+            enemyPlanePrefab,
+            summonCount,
+            summonInterval,
+            summonSpawnX,
+            summonMinY,
+            summonMaxY);
     }
 
     private void ChangeCityState(BossState nextState)

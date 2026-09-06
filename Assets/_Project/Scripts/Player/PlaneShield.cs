@@ -1,10 +1,7 @@
 using UnityEngine;
 
-// A shield absorbs one hit instead of ending the run.
-//
-// Breaking it grants a short invulnerability. Without it the same obstacle would still
-// be overlapping the plane on the very next frame and would kill it anyway, which reads
-// as the shield simply not working.
+// Absorbs one hit and grants brief invulnerability so the same overlapping obstacle
+// cannot immediately hit the plane again.
 public class PlaneShield : MonoBehaviour
 {
     [Header("Visual")]
@@ -20,6 +17,7 @@ public class PlaneShield : MonoBehaviour
     {
         get { return hasShield; }
     }
+
     public bool IsInvulnerable
     {
         get { return invulnerabilityTimer > 0f; }
@@ -29,19 +27,23 @@ public class PlaneShield : MonoBehaviour
     {
         UpdateVisual();
     }
+
     private void Update()
     {
         if (invulnerabilityTimer <= 0f)
         {
             return;
         }
+
         invulnerabilityTimer = invulnerabilityTimer - Time.deltaTime;
     }
+
     public void GrantShield()
     {
         hasShield = true;
         UpdateVisual();
     }
+
     public bool ConsumeShield()
     {
         if (hasShield == false)
@@ -54,12 +56,14 @@ public class PlaneShield : MonoBehaviour
         UpdateVisual();
         return true;
     }
+
     private void UpdateVisual()
     {
         if (shieldVisual == null)
         {
             return;
         }
+
         shieldVisual.enabled = hasShield;
     }
 }

@@ -103,6 +103,14 @@ MonoBehaviour:
   despawnX: -30
   minY: 12
   maxY: 28
+  playerLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  contactRadius: 0.5
+  explodesOnArrival: 0
+  explosionVisual: {fileID: 0}
+  explosionRadius: 2
+  explosionDuration: 0.35
 --- !u!1 &4644275053367339793
 GameObject:
   m_ObjectHideFlags: 0

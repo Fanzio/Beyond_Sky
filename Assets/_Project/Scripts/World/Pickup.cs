@@ -7,8 +7,7 @@ public enum PickupType
     Ammo
 }
 
-// One collectable inside a chunk. Collecting hides it rather than destroying it, so the
-// chunk can put it back when it is recycled.
+// Hides collected pickups so their chunk can restore and reuse them later.
 public class Pickup : MonoBehaviour
 {
     [Header("Type")]
@@ -25,10 +24,12 @@ public class Pickup : MonoBehaviour
     {
         get { return type; }
     }
+
     public int Amount
     {
         get { return amount; }
     }
+
     public bool IsCollected
     {
         get { return isCollected; }
@@ -40,6 +41,7 @@ public class Pickup : MonoBehaviour
         spriteRenderer.enabled = false;
         pickupCollider.enabled = false;
     }
+
     public void ResetPickup()
     {
         isCollected = false;

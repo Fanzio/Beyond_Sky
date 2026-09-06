@@ -1,17 +1,7 @@
 using UnityEngine;
 
-// Vertical movement inside a bounded band. There is no flight model: the input sets a
-// target vertical speed and the plane reaches it almost immediately, because dodging is
-// a half-second decision and the controls have to answer straight away.
-//
-// The tilt is derived in LateUpdate from how far the plane ACTUALLY moved this frame,
-// not from its own velocity field. Anything that moves the plane therefore tilts it,
-// including sequences that drive it from the outside. Deriving it from the velocity
-// field meant the nose stayed level during the ascension, since that climb is produced
-// by another script calling MoveVerticalBy.
-//
-// A cutscene can still stage the pose explicitly with SetTiltOverride: the plane is
-// boxed inside the band, so its real movement is far too small to sell a long climb.
+// Keeps the plane inside its vertical band while leaving X fixed.
+// Tilt follows actual movement so external movement, including ascension, remains visible.
 public class PlaneController : MonoBehaviour
 {
     [Header("References")]
@@ -47,10 +37,12 @@ public class PlaneController : MonoBehaviour
         hasTiltOverride = true;
         tiltOverride = angle;
     }
+
     public void ClearTiltOverride()
     {
         hasTiltOverride = false;
     }
+
     public void MoveVerticalBy(float delta)
     {
         Vector3 position = transform.position;
@@ -68,10 +60,12 @@ public class PlaneController : MonoBehaviour
         }
         transform.position = position;
     }
+
     private void Start()
     {
         lastY = transform.position.y;
     }
+
     private void Update()
     {
         if (planeDodge != null)
@@ -87,6 +81,7 @@ public class PlaneController : MonoBehaviour
         UpdateVerticalVelocity(deltaTime);
         MoveVerticalBy(verticalVelocity * deltaTime);
     }
+
     private void LateUpdate()
     {
         float deltaTime = Time.deltaTime;
@@ -101,6 +96,7 @@ public class PlaneController : MonoBehaviour
 
         UpdateTilt(movedRate, deltaTime);
     }
+
     private void UpdateVerticalVelocity(float deltaTime)
     {
         float target = planeInput.VerticalInput * verticalSpeed;
@@ -108,6 +104,7 @@ public class PlaneController : MonoBehaviour
         verticalVelocity = Mathf.MoveTowards(
             verticalVelocity, target, acceleration * deltaTime);
     }
+
     private void UpdateTilt(float movedRate, float deltaTime)
     {
         float targetTilt = tiltOverride;
@@ -121,6 +118,7 @@ public class PlaneController : MonoBehaviour
         currentTilt = Mathf.Lerp(currentTilt, targetTilt, tiltSmoothing * deltaTime);
         visual.localRotation = Quaternion.Euler(0f, 0f, currentTilt);
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;

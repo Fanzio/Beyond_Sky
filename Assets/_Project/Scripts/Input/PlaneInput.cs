@@ -2,20 +2,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
-// Three zones. The left part of the screen flies, the right part shoots.
-//
-//   Left area, upper half  -> climb
-//   Left area, lower half  -> descend
-//   Right area             -> one tap, one bullet
-//
-// Splitting the hands means steering and firing never compete. A fire button placed
-// inside the steering area would stop the plane every time you shot, which is the last
-// thing you want during a boss fight.
-//
-// A double tap inside a steering zone is the dodge. The FIRST tap still steers normally,
-// because waiting to find out whether a tap is a double would add lag to every input.
-//
-// Screen coordinates have their origin at the bottom left, so a high y is the top.
+// Separates steering and firing so both actions can be used together during combat.
+// The first steering tap is immediate; a second tap in the same zone triggers the dodge.
 public class PlaneInput : MonoBehaviour
 {
     [Header("Zones")]
@@ -43,12 +31,14 @@ public class PlaneInput : MonoBehaviour
         pendingDoubleTap = 0f;
         return result;
     }
+
     public bool ConsumeFire()
     {
         bool result = pendingFire;
         pendingFire = false;
         return result;
     }
+
     private void Update()
     {
         if (isLocked)
@@ -63,12 +53,11 @@ public class PlaneInput : MonoBehaviour
         ReadPresses();
     }
 
-    // Locking here switches off steering, firing and the dodge in one place, so no other
-    // script has to know that a cutscene state exists.
     public void SetLocked(bool locked)
     {
         isLocked = locked;
     }
+
     private float ReadHeldSteering()
     {
         float value = 0f;
@@ -93,6 +82,7 @@ public class PlaneInput : MonoBehaviour
         }
         return Mathf.Clamp(value, -1f, 1f);
     }
+
     private void ReadPresses()
     {
         if (Touchscreen.current != null)
@@ -114,6 +104,7 @@ public class PlaneInput : MonoBehaviour
             }
         }
     }
+
     private void RegisterPress(Vector2 position)
     {
         if (IsInSteeringArea(position.x) == false)
@@ -135,10 +126,12 @@ public class PlaneInput : MonoBehaviour
         lastTapTime = Time.unscaledTime;
         lastTapZone = zone;
     }
+
     private bool IsInSteeringArea(float screenX)
     {
         return screenX < Screen.width * steeringWidthFraction;
     }
+
     private float SteeringValue(Vector2 position)
     {
         if (IsInSteeringArea(position.x) == false)

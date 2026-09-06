@@ -4,23 +4,59 @@ using UnityEngine;
 [System.Serializable]
 public class EnemyEntry
 {
-    public EnemyBase prefab;
+    [SerializeField] private EnemyBase prefab;
 
     [Header("Floors this enemy appears on - 0 city, 1 sky, 2 space")]
-    public int[] floors;
+    [SerializeField] private int[] floors;
 
-    public int poolSize = 3;
-    public bool enabled = true;
+    [SerializeField] private int poolSize = 3;
+    [SerializeField] private bool enabled = true;
 
     [Header("Leave empty to use the spawner's default pool")]
-    public BulletPool bulletPool;
+    [SerializeField] private BulletPool bulletPool;
 
     [Header("Optional support pools for special enemies")]
-    public ExplosiveMissilePool explosiveMissilePool;
-    public AerialMinePool aerialMinePool;
+    [SerializeField] private ExplosiveMissilePool explosiveMissilePool;
+    [SerializeField] private AerialMinePool aerialMinePool;
+
+    public EnemyBase Prefab
+    {
+        get { return prefab; }
+    }
+
+    public int[] Floors
+    {
+        get { return floors; }
+    }
+
+    public int PoolSize
+    {
+        get { return poolSize; }
+    }
+
+    public bool IsEnabled
+    {
+        get { return enabled; }
+    }
+
+    public BulletPool BulletPool
+    {
+        get { return bulletPool; }
+    }
+
+    public ExplosiveMissilePool ExplosiveMissilePool
+    {
+        get { return explosiveMissilePool; }
+    }
+
+    public AerialMinePool AerialMinePool
+    {
+        get { return aerialMinePool; }
+    }
 }
 
-// Normal random spawning plus an explicit pooled spawn requested by a boss.
+// Creates every enemy pool before gameplay, handles normal random spawning and lets
+// bosses request an exact prefab while bypassing the normal spawn limits.
 public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
@@ -49,46 +85,40 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float minOffsetFromPlayer = 5f;
 
     private List<EnemyBase> pool = new List<EnemyBase>();
-    private List<int> poolEntryIndex = new List<int>();
-    private List<EnemyBase> candidates = new List<EnemyBase>();
-    private float nextSpawnTimer;
+    private List<int> poolEntryIndices = new List<int>();
+    private List<EnemyBase> availableEnemies = new List<EnemyBase>();
+    private float spawnTimer;
 
     private void Awake()
     {
         for (int i = 0; i < entries.Length; i++)
         {
-            if (entries[i].enabled == false)
+            EnemyEntry entry = entries[i];
+
+            if (entry.IsEnabled == false)
             {
                 continue;
             }
 
-            if (entries[i].prefab == null)
+            if (entry.Prefab == null)
             {
                 continue;
             }
 
-            for (int copy = 0; copy < entries[i].poolSize; copy++)
+            for (int copy = 0; copy < entry.PoolSize; copy++)
             {
-                EnemyBase enemy = Instantiate(entries[i].prefab, transform);
-                enemy.Setup(player, PoolFor(entries[i]));
-
-                IEnemySupportPoolReceiver supportReceiver =
-                    enemy as IEnemySupportPoolReceiver;
-
-                if (supportReceiver != null)
-                {
-                    supportReceiver.SetupSupportPools(
-                        entries[i].explosiveMissilePool,
-                        entries[i].aerialMinePool);
-                }
+                EnemyBase enemy = Instantiate(entry.Prefab, transform);
+                enemy.Setup(player, GetBulletPool(entry));
+                enemy.SetupExplosiveMissilePool(entry.ExplosiveMissilePool);
+                enemy.SetupAerialMinePool(entry.AerialMinePool);
 
                 enemy.gameObject.SetActive(false);
                 pool.Add(enemy);
-                poolEntryIndex.Add(i);
+                poolEntryIndices.Add(i);
             }
         }
 
-        nextSpawnTimer = Random.Range(minInterval, maxInterval);
+        spawnTimer = Random.Range(minInterval, maxInterval);
     }
 
     private void Update()
@@ -113,24 +143,17 @@ public class EnemySpawner : MonoBehaviour
             return;
         }
 
-        nextSpawnTimer = nextSpawnTimer - Time.deltaTime;
+        spawnTimer = spawnTimer - Time.deltaTime;
 
-        if (nextSpawnTimer > 0f)
+        if (spawnTimer > 0f)
         {
             return;
         }
 
-        nextSpawnTimer = Random.Range(minInterval, maxInterval);
-        TrySpawn();
+        spawnTimer = Random.Range(minInterval, maxInterval);
+        TrySpawnRandomEnemy();
     }
 
-    // Used by bosses to activate a specific enemy from this same pre-built pool. It
-    // deliberately ignores the arena and on-screen limits, because during a summon the
-    // boss owns the timing and the quantity.
-    //
-    // The prefab passed in must be the SAME asset listed in entries, or nothing matches
-    // and the summon quietly does nothing. The warning exists because that failure is
-    // otherwise invisible: the boss simply never summons and there is nothing to see.
     public EnemyBase SpawnForBoss(EnemyBase requestedPrefab, Vector3 startPosition)
     {
         if (requestedPrefab == null)
@@ -152,9 +175,9 @@ public class EnemySpawner : MonoBehaviour
                 continue;
             }
 
-            int entryIndex = poolEntryIndex[i];
+            int entryIndex = poolEntryIndices[i];
 
-            if (entries[entryIndex].prefab != requestedPrefab)
+            if (entries[entryIndex].Prefab != requestedPrefab)
             {
                 continue;
             }
@@ -166,11 +189,19 @@ public class EnemySpawner : MonoBehaviour
         return null;
     }
 
+    public void DespawnAllEnemies()
+    {
+        for (int i = 0; i < pool.Count; i++)
+        {
+            pool[i].gameObject.SetActive(false);
+        }
+    }
+
     private bool IsInRoster(EnemyBase prefab)
     {
         for (int i = 0; i < entries.Length; i++)
         {
-            if (entries[i].prefab == prefab)
+            if (entries[i].Prefab == prefab)
             {
                 return true;
             }
@@ -179,26 +210,26 @@ public class EnemySpawner : MonoBehaviour
         return false;
     }
 
-    private void TrySpawn()
+    private void TrySpawnRandomEnemy()
     {
-        if (CountActive() >= MaxActiveNow())
+        if (CountActiveEnemies() >= GetMaximumActiveEnemies())
         {
             return;
         }
 
-        EnemyBase enemy = PickEnemy();
+        EnemyBase enemy = PickAvailableEnemy();
 
         if (enemy == null)
         {
             return;
         }
 
-        enemy.Activate(new Vector3(spawnX, PickSpawnY(), 0f));
+        enemy.Activate(new Vector3(spawnX, PickSpawnHeight(), 0f));
     }
 
-    private EnemyBase PickEnemy()
+    private EnemyBase PickAvailableEnemy()
     {
-        candidates.Clear();
+        availableEnemies.Clear();
         int floor = floorManager.CurrentFloorIndex;
 
         for (int i = 0; i < pool.Count; i++)
@@ -208,33 +239,33 @@ public class EnemySpawner : MonoBehaviour
                 continue;
             }
 
-            if (AppearsOnFloor(entries[poolEntryIndex[i]], floor) == false)
+            if (CanAppearOnFloor(entries[poolEntryIndices[i]], floor) == false)
             {
                 continue;
             }
 
-            candidates.Add(pool[i]);
+            availableEnemies.Add(pool[i]);
         }
 
-        if (candidates.Count == 0)
+        if (availableEnemies.Count == 0)
         {
             return null;
         }
 
-        return candidates[Random.Range(0, candidates.Count)];
+        return availableEnemies[Random.Range(0, availableEnemies.Count)];
     }
 
-    private BulletPool PoolFor(EnemyEntry entry)
+    private BulletPool GetBulletPool(EnemyEntry entry)
     {
-        if (entry.bulletPool != null)
+        if (entry.BulletPool != null)
         {
-            return entry.bulletPool;
+            return entry.BulletPool;
         }
 
         return defaultBulletPool;
     }
 
-    private int MaxActiveNow()
+    private int GetMaximumActiveEnemies()
     {
         if (maxActivePerFloor.Length == 0)
         {
@@ -251,11 +282,11 @@ public class EnemySpawner : MonoBehaviour
         return maxActivePerFloor[floor];
     }
 
-    private bool AppearsOnFloor(EnemyEntry entry, int floor)
+    private bool CanAppearOnFloor(EnemyEntry entry, int floor)
     {
-        for (int i = 0; i < entry.floors.Length; i++)
+        for (int i = 0; i < entry.Floors.Length; i++)
         {
-            if (entry.floors[i] == floor)
+            if (entry.Floors[i] == floor)
             {
                 return true;
             }
@@ -264,7 +295,7 @@ public class EnemySpawner : MonoBehaviour
         return false;
     }
 
-    private float PickSpawnY()
+    private float PickSpawnHeight()
     {
         float playerY = player.position.y;
         float above = playerY + minOffsetFromPlayer;
@@ -288,7 +319,7 @@ public class EnemySpawner : MonoBehaviour
         return Random.Range(above, maxY);
     }
 
-    private int CountActive()
+    private int CountActiveEnemies()
     {
         int count = 0;
 

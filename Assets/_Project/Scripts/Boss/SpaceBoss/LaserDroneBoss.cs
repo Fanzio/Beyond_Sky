@@ -157,12 +157,12 @@ public class LaserDroneBoss : BossBase
                 return trackingActiveColor;
             }
 
-            return FlashBetween(NormalColor, trackingWarningColor);
+            return FlashBetween(NormalColor, trackingWarningColor, flashSpeed);
         }
 
         if (attackState == LaserDroneBossState.HeavyTelegraph)
         {
-            return FlashBetween(NormalColor, heavyWarningColor);
+            return FlashBetween(NormalColor, heavyWarningColor, flashSpeed);
         }
 
         if (attackState == LaserDroneBossState.HeavyFiring)
@@ -172,7 +172,7 @@ public class LaserDroneBoss : BossBase
 
         if (attackState == LaserDroneBossState.ZoneTelegraph)
         {
-            return FlashBetween(NormalColor, zoneWarningColor);
+            return FlashBetween(NormalColor, zoneWarningColor, flashSpeed);
         }
 
         return NormalColor;
@@ -208,7 +208,7 @@ public class LaserDroneBoss : BossBase
 
     private void UpdateTrackingLaser(float deltaTime)
     {
-        TrackPlayer(trackingSpeed, deltaTime);
+        TrackTargetY(trackingSpeed, minY, maxY, deltaTime);
         trackingCycleTimer = trackingCycleTimer + deltaTime;
 
         if (trackingLaserActive)
@@ -265,7 +265,7 @@ public class LaserDroneBoss : BossBase
 
     private void UpdateHeavyAlign(float deltaTime)
     {
-        TrackPlayer(heavyAlignSpeed, deltaTime);
+        TrackTargetY(heavyAlignSpeed, minY, maxY, deltaTime);
 
         if (stateTimer < heavyAlignDuration)
         {
@@ -332,25 +332,19 @@ public class LaserDroneBoss : BossBase
             return;
         }
 
-        if (upperZoneDrone != null)
-        {
-            Vector3 upperStart = new Vector3(zoneDroneSpawnX, upperZoneY, 0f);
-            Vector3 upperHold = new Vector3(zoneDroneHoldX, upperZoneY, 0f);
-            upperZoneDrone.Activate(
-                upperStart,
-                upperHold,
-                zoneDroneActiveDuration);
-        }
+        Vector3 upperStart = new Vector3(zoneDroneSpawnX, upperZoneY, 0f);
+        Vector3 upperHold = new Vector3(zoneDroneHoldX, upperZoneY, 0f);
+        upperZoneDrone.Activate(
+            upperStart,
+            upperHold,
+            zoneDroneActiveDuration);
 
-        if (lowerZoneDrone != null)
-        {
-            Vector3 lowerStart = new Vector3(zoneDroneSpawnX, lowerZoneY, 0f);
-            Vector3 lowerHold = new Vector3(zoneDroneHoldX, lowerZoneY, 0f);
-            lowerZoneDrone.Activate(
-                lowerStart,
-                lowerHold,
-                zoneDroneActiveDuration);
-        }
+        Vector3 lowerStart = new Vector3(zoneDroneSpawnX, lowerZoneY, 0f);
+        Vector3 lowerHold = new Vector3(zoneDroneHoldX, lowerZoneY, 0f);
+        lowerZoneDrone.Activate(
+            lowerStart,
+            lowerHold,
+            zoneDroneActiveDuration);
     }
 
     private void DeactivateZoneDrones()
@@ -430,22 +424,6 @@ public class LaserDroneBoss : BossBase
         attackBagIndex = 0;
     }
 
-    private void TrackPlayer(float speed, float deltaTime)
-    {
-        if (Target == null)
-        {
-            return;
-        }
-
-        float targetY = Mathf.Clamp(Target.position.y, minY, maxY);
-        float nextY = Mathf.MoveTowards(
-            transform.position.y,
-            targetY,
-            speed * deltaTime);
-
-        SetY(nextY);
-    }
-
     private void SetTrackingBeamActive(bool isActive)
     {
         if (trackingBeam != null)
@@ -476,12 +454,6 @@ public class LaserDroneBoss : BossBase
         {
             heavyBeam.SetWarningVisible(isVisible);
         }
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
     }
 
     private void ChangeAttackState(LaserDroneBossState nextState)

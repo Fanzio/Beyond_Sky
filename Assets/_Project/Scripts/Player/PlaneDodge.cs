@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// Aileron roll on a double tap: the plane rolls ON THE SPOT and is invulnerable for
-// the whole manoeuvre.
+// Performs an in-place aileron roll and keeps the plane invulnerable for its duration.
 public class PlaneDodge : MonoBehaviour
 {
     [Header("References")]
@@ -25,14 +24,17 @@ public class PlaneDodge : MonoBehaviour
     {
         get { return isRolling; }
     }
+
     public bool IsInvulnerable
     {
         get { return isRolling; }
     }
+
     public bool IsReady
     {
         get { return cooldownTimer <= 0f; }
     }
+
     public float CooldownNormalized
     {
         get { return 1f - Mathf.Clamp01(cooldownTimer / cooldown); }
@@ -41,26 +43,32 @@ public class PlaneDodge : MonoBehaviour
     {
         baseScale = visual.localScale;
     }
+
     private void Update()
     {
         float deltaTime = Time.deltaTime;
 
         TickCooldown(deltaTime);
+
         if (isRolling)
         {
             AdvanceRoll(deltaTime);
             return;
         }
+
         TryStartRoll();
     }
+
     private void TickCooldown(float deltaTime)
     {
         if (cooldownTimer <= 0f)
         {
             return;
         }
+
         cooldownTimer = cooldownTimer - deltaTime;
     }
+
     private void TryStartRoll()
     {
         float direction = planeInput.ConsumeDoubleTap();
@@ -69,25 +77,31 @@ public class PlaneDodge : MonoBehaviour
         {
             return;
         }
+
         if (IsReady == false)
         {
             return;
         }
+
         isRolling = true;
         rollTimer = 0f;
         rollDirection = direction;
     }
+
     private void AdvanceRoll(float deltaTime)
     {
         rollTimer = rollTimer + deltaTime;
 
         UpdateRollVisual();
+
         if (rollTimer < rollDuration)
         {
             return;
         }
+
         EndRoll();
     }
+
     private void UpdateRollVisual()
     {
         float progress = rollTimer / rollDuration;
@@ -99,6 +113,7 @@ public class PlaneDodge : MonoBehaviour
         float bank = Mathf.Sin(progress * 180f * Mathf.Deg2Rad) * rollBankAngle;
         visual.localRotation = Quaternion.Euler(0f, 0f, rollDirection * bank);
     }
+
     private void EndRoll()
     {
         isRolling = false;

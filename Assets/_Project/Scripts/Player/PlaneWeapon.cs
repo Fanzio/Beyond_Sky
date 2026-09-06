@@ -1,11 +1,6 @@
 using UnityEngine;
 
-// Firing and ammo. The player starts a run with nothing and has to find bullets.
-//
-// The whole point of scarcity is the decision it creates: every bullet spent clearing a
-// path is a bullet missing when the boss arrives. Make ammo plentiful and that decision
-// disappears, and with it the close call loop, because shooting everything is easier
-// than threading gaps.
+// Manages limited ammunition and obtains every projectile from the shared bullet pool.
 public class PlaneWeapon : MonoBehaviour
 {
     [Header("References")]
@@ -33,10 +28,12 @@ public class PlaneWeapon : MonoBehaviour
     {
         ammo = ammo + amount;
     }
+
     private void Awake()
     {
         ammo = startingAmmo;
     }
+
     private void Update()
     {
         if (gameManager.IsGameOver)
@@ -51,22 +48,27 @@ public class PlaneWeapon : MonoBehaviour
         {
             return;
         }
+
         TryFire();
     }
+
     private void TickCooldown(float deltaTime)
     {
         if (cooldownTimer <= 0f)
         {
             return;
         }
+
         cooldownTimer = cooldownTimer - deltaTime;
     }
+
     private void TryFire()
     {
         if (ammo <= 0)
         {
             return;
         }
+
         if (cooldownTimer > 0f)
         {
             return;

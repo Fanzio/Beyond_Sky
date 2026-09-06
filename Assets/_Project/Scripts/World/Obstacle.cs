@@ -1,10 +1,6 @@
 using UnityEngine;
 
-// Marks something the player can crash into and a bullet can destroy.
-//
-// Destroying hides the object rather than removing it, because chunks are recycled and
-// everything inside has to come back intact next time round. Without the reset the world
-// would slowly empty out over a long run, and the cause would be hard to spot.
+// Hides destroyed obstacles so their chunk can restore and reuse them later.
 public class Obstacle : MonoBehaviour
 {
     private bool isDestroyed;
@@ -19,6 +15,7 @@ public class Obstacle : MonoBehaviour
         isDestroyed = true;
         gameObject.SetActive(false);
     }
+
     public void ResetObstacle()
     {
         isDestroyed = false;

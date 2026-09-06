@@ -86,13 +86,18 @@ public class GunnerDroneBoss : BossBase
     private float burstShotTimer;
 
     private EnemyBase[] validReinforcements = new EnemyBase[0];
-    private bool reinforcementSequenceActive;
-    private int reinforcementsSpawned;
-    private float reinforcementTimer;
-    private EnemyBase activeReinforcement;
+    private BossReinforcementSequence reinforcementSequence =
+        new BossReinforcementSequence();
 
     protected override void OnSetupComplete()
     {
+        if (upperMuzzle == null || lowerMuzzle == null)
+        {
+            Debug.LogWarning(
+                "GunnerDroneBoss: Upper Muzzle o Lower Muzzle non assegnato.",
+                this);
+        }
+
         if (gunnerBulletPool == null)
         {
             Debug.LogWarning("GunnerDroneBoss: Gunner Bullet Pool non assegnata, verra' usata la pool normale del BossManager.", this);
@@ -122,10 +127,7 @@ public class GunnerDroneBoss : BossBase
         stateTimer = 0f;
         burstShotTimer = 0f;
         openingBurstUsed = false;
-        reinforcementSequenceActive = false;
-        reinforcementsSpawned = 0;
-        reinforcementTimer = 0f;
-        activeReinforcement = null;
+        reinforcementSequence.Stop();
         BuildRuntimeAttackBag();
     }
 
@@ -136,7 +138,7 @@ public class GunnerDroneBoss : BossBase
 
     protected override void TickFight(float deltaTime)
     {
-        UpdateReinforcementSequence(deltaTime);
+        reinforcementSequence.Tick(deltaTime);
         stateTimer = stateTimer + deltaTime;
 
         if (attackState == GunnerDroneState.BurstAlign)
@@ -171,25 +173,27 @@ public class GunnerDroneBoss : BossBase
 
     protected override void OnDefeatStarted()
     {
-        reinforcementSequenceActive = false;
-        activeReinforcement = null;
+        reinforcementSequence.Stop();
     }
 
     protected override Color GetFightColor()
     {
         if (attackState == GunnerDroneState.BurstTelegraph)
         {
-            return FlashBetween(NormalColor, burstWarningColor);
+            return FlashBetween(NormalColor, burstWarningColor, flashSpeed);
         }
 
         if (attackState == GunnerDroneState.HeavyTelegraph)
         {
-            return FlashBetween(NormalColor, heavyWarningColor);
+            return FlashBetween(NormalColor, heavyWarningColor, flashSpeed);
         }
 
         if (attackState == GunnerDroneState.ReinforcementTelegraph)
         {
-            return FlashBetween(NormalColor, reinforcementWarningColor);
+            return FlashBetween(
+                NormalColor,
+                reinforcementWarningColor,
+                flashSpeed);
         }
 
         return NormalColor;
@@ -210,7 +214,7 @@ public class GunnerDroneBoss : BossBase
         }
 
         if (nextAttack == GunnerDroneAttack.RandomReinforcements
-            && reinforcementSequenceActive)
+            && reinforcementSequence.IsActive)
         {
             nextAttack = GunnerDroneAttack.DualTrackingBurst;
         }
@@ -232,7 +236,13 @@ public class GunnerDroneBoss : BossBase
 
     private void UpdateBurstAlign(float deltaTime)
     {
-        TrackPlayer(burstAlignSpeed, deltaTime);
+        TrackPointPairToTargetY(
+            upperMuzzle,
+            lowerMuzzle,
+            burstAlignSpeed,
+            minY,
+            maxY,
+            deltaTime);
 
         if (stateTimer < burstAlignDuration)
         {
@@ -256,7 +266,13 @@ public class GunnerDroneBoss : BossBase
 
     private void UpdateBurstFire(float deltaTime)
     {
-        TrackPlayer(burstTrackSpeed, deltaTime);
+        TrackPointPairToTargetY(
+            upperMuzzle,
+            lowerMuzzle,
+            burstTrackSpeed,
+            minY,
+            maxY,
+            deltaTime);
         burstShotTimer = burstShotTimer + deltaTime;
         float safeInterval = Mathf.Max(0.05f, burstShotInterval);
 
@@ -276,7 +292,13 @@ public class GunnerDroneBoss : BossBase
 
     private void UpdateHeavyAlign(float deltaTime)
     {
-        TrackPlayer(heavyAlignSpeed, deltaTime);
+        TrackPointPairToTargetY(
+            upperMuzzle,
+            lowerMuzzle,
+            heavyAlignSpeed,
+            minY,
+            maxY,
+            deltaTime);
 
         if (stateTimer < heavyAlignDuration)
         {
@@ -304,8 +326,8 @@ public class GunnerDroneBoss : BossBase
             return;
         }
 
-        FireOneBullet(pool, GetMuzzlePosition(upperMuzzle), speed);
-        FireOneBullet(pool, GetMuzzlePosition(lowerMuzzle), speed);
+        FireOneBullet(pool, GetPointPosition(upperMuzzle), speed);
+        FireOneBullet(pool, GetPointPosition(lowerMuzzle), speed);
     }
 
     private BulletPool GetNormalFirePool()
@@ -343,93 +365,14 @@ public class GunnerDroneBoss : BossBase
 
     private void StartReinforcementSequence()
     {
-        if (reinforcementCount <= 0 || validReinforcements.Length == 0)
-        {
-            return;
-        }
-
-        reinforcementsSpawned = 0;
-        reinforcementTimer = 0f;
-        activeReinforcement = null;
-        reinforcementSequenceActive = true;
-        TrySpawnNextReinforcement();
-    }
-
-    private void UpdateReinforcementSequence(float deltaTime)
-    {
-        if (reinforcementSequenceActive == false)
-        {
-            return;
-        }
-
-        if (activeReinforcement != null)
-        {
-            if (activeReinforcement.gameObject.activeSelf)
-            {
-                return;
-            }
-
-            activeReinforcement = null;
-            reinforcementTimer = 0f;
-        }
-
-        if (reinforcementsSpawned >= reinforcementCount)
-        {
-            reinforcementSequenceActive = false;
-            return;
-        }
-
-        reinforcementTimer = reinforcementTimer + deltaTime;
-
-        if (reinforcementTimer < reinforcementInterval)
-        {
-            return;
-        }
-
-        reinforcementTimer = 0f;
-        TrySpawnNextReinforcement();
-    }
-
-    private void TrySpawnNextReinforcement()
-    {
-        if (reinforcementsSpawned >= reinforcementCount)
-        {
-            return;
-        }
-
-        if (enemySpawner == null || validReinforcements.Length == 0)
-        {
-            reinforcementSequenceActive = false;
-            return;
-        }
-
-        EnemyBase selectedPrefab = validReinforcements[
-            Random.Range(0, validReinforcements.Length)];
-
-        float progress = 0.5f;
-
-        if (reinforcementCount > 0)
-        {
-            progress = (reinforcementsSpawned + 0.5f) / reinforcementCount;
-        }
-
-        float spawnY = Mathf.Lerp(
+        reinforcementSequence.BeginRandom(
+            enemySpawner,
+            validReinforcements,
+            reinforcementCount,
+            reinforcementInterval,
+            reinforcementSpawnX,
             reinforcementMinY,
-            reinforcementMaxY,
-            progress);
-
-        Vector3 spawnPosition = new Vector3(reinforcementSpawnX, spawnY, 0f);
-        EnemyBase spawnedEnemy = enemySpawner.SpawnForBoss(
-            selectedPrefab,
-            spawnPosition);
-
-        if (spawnedEnemy == null)
-        {
-            return;
-        }
-
-        activeReinforcement = spawnedEnemy;
-        reinforcementsSpawned = reinforcementsSpawned + 1;
+            reinforcementMaxY);
     }
 
     private void BuildValidReinforcements()
@@ -520,38 +463,6 @@ public class GunnerDroneBoss : BossBase
         }
 
         attackBagIndex = 0;
-    }
-
-    private void TrackPlayer(float speed, float deltaTime)
-    {
-        if (Target == null)
-        {
-            return;
-        }
-
-        float targetY = Mathf.Clamp(Target.position.y, minY, maxY);
-        float nextY = Mathf.MoveTowards(
-            transform.position.y,
-            targetY,
-            speed * deltaTime);
-
-        SetY(nextY);
-    }
-
-    private Vector3 GetMuzzlePosition(Transform muzzle)
-    {
-        if (muzzle != null)
-        {
-            return muzzle.position;
-        }
-
-        return transform.position;
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
     }
 
     private void ChangeAttackState(GunnerDroneState nextState)

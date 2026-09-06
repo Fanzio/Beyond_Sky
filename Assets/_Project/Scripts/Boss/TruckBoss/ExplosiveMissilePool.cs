@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Pre-creates every missile required by the truck boss.
+// Creates every explosive missile before gameplay for bosses and standard enemies.
 public class ExplosiveMissilePool : MonoBehaviour
 {
     [Header("Pool")]
@@ -39,5 +39,13 @@ public class ExplosiveMissilePool : MonoBehaviour
         }
 
         return null;
+    }
+
+    public void DespawnAll()
+    {
+        for (int i = 0; i < missiles.Count; i++)
+        {
+            missiles[i].Despawn();
+        }
     }
 }

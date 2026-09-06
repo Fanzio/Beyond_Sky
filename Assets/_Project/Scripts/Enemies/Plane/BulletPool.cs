@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Bullets are created once at Awake and only ever activated or deactivated after that.
-// Allocating during play is what causes the stutter you cannot tune away later.
+// Creates every bullet before gameplay so firing never allocates new objects.
 public class BulletPool : MonoBehaviour
 {
     [Header("Pool")]
@@ -20,6 +19,7 @@ public class BulletPool : MonoBehaviour
             bullets.Add(bullet);
         }
     }
+
     public Bullet GetBullet()
     {
         for (int i = 0; i < bullets.Count; i++)
@@ -28,8 +28,18 @@ public class BulletPool : MonoBehaviour
             {
                 continue;
             }
+
             return bullets[i];
         }
+
         return null;
+    }
+
+    public void DespawnAll()
+    {
+        for (int i = 0; i < bullets.Count; i++)
+        {
+            bullets[i].Despawn();
+        }
     }
 }

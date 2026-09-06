@@ -1,19 +1,7 @@
 using UnityEngine;
 
-// A background layer that scrolls left, wrapping on both axes.
-//
-// Vertical scrolling stays at zero during normal play: the plane holds a floor, it is not
-// climbing, and pretending otherwise would be a lie the player eventually notices. The
-// ascension sequence adds a vertical factor on top for a couple of seconds, which is the
-// one moment when climbing is actually true.
-//
-// The extra factor is ADDED, not multiplied. Multiplying a resting value of zero would
-// leave it at zero and the effect would never appear.
-//
-// Vertical wrapping is switched off for layers holding buildings. Clouds look fine coming
-// back round from the top; a skyline does not. With wrapping off the city simply sinks
-// away during the ascension and is gone, which is what climbing out of it should look
-// like anyway.
+// Builds and scrolls one reusable background grid. Ascension adds vertical movement,
+// while layers such as skylines can disable vertical wrapping to leave the screen.
 public class ParallaxLayer : MonoBehaviour
 {
     [Header("References")]
@@ -45,6 +33,7 @@ public class ParallaxLayer : MonoBehaviour
     {
         BuildGrid();
     }
+
     private void Update()
     {
         if (isVisible == false)
@@ -58,8 +47,6 @@ public class ParallaxLayer : MonoBehaviour
         ScrollTiles(speed * horizontalFactor, speed * vertical);
     }
 
-    // Hides the tiles without deactivating this object, so the grid stays built and never
-    // has to be recreated when the floor changes.
     public void SetVisible(bool visible)
     {
         isVisible = visible;
@@ -68,15 +55,18 @@ public class ParallaxLayer : MonoBehaviour
         {
             return;
         }
+
         for (int i = 0; i < tiles.Length; i++)
         {
             tiles[i].gameObject.SetActive(visible);
         }
     }
+
     public void SetExtraVerticalFactor(float extra)
     {
         extraVerticalFactor = extra;
     }
+
     private void BuildGrid()
     {
         spanX = columns * tileSize.x;
@@ -99,12 +89,15 @@ public class ParallaxLayer : MonoBehaviour
                 index = index + 1;
             }
         }
+
         if (tilePrefab.scene.IsValid())
         {
             tilePrefab.SetActive(false);
         }
+
         SetVisible(isVisible);
     }
+
     private void ScrollTiles(float deltaX, float deltaY)
     {
         float halfX = spanX * 0.5f;
@@ -121,6 +114,7 @@ public class ParallaxLayer : MonoBehaviour
             {
                 position.x = position.x + spanX;
             }
+
             if (wrapVertically)
             {
                 if (position.y < -halfY)
@@ -128,6 +122,7 @@ public class ParallaxLayer : MonoBehaviour
                     position.y = position.y + spanY;
                 }
             }
+
             tiles[i].localPosition = position;
         }
     }

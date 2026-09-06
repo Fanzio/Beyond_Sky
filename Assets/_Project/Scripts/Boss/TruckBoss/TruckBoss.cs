@@ -104,10 +104,8 @@ public class TruckBoss : BossBase
     private Vector3 lockedBazookaTarget;
     private int bazookaMissilesFired;
 
-    private float summonTimer;
-    private int summonIndex;
-    private EnemyBase activeSummonedPlane;
-    private bool summonSequenceActive;
+    private BossReinforcementSequence reinforcementSequence =
+        new BossReinforcementSequence();
 
     protected override void OnSetupComplete()
     {
@@ -138,10 +136,7 @@ public class TruckBoss : BossBase
         sniperShotsFired = 0;
         bazookaMissilesFired = 0;
 
-        summonTimer = 0f;
-        summonIndex = 0;
-        activeSummonedPlane = null;
-        summonSequenceActive = false;
+        reinforcementSequence.Stop();
 
         SetAllGunnerColors(normalGunnerColor);
         BuildRuntimeAttackBag();
@@ -154,7 +149,7 @@ public class TruckBoss : BossBase
 
     protected override void TickFight(float deltaTime)
     {
-        UpdateSummonSequence(deltaTime);
+        reinforcementSequence.Tick(deltaTime);
         stateTimer = stateTimer + deltaTime;
 
         if (attackState == TruckBossState.MachineGunTelegraph)
@@ -195,8 +190,7 @@ public class TruckBoss : BossBase
 
     protected override void OnDefeatStarted()
     {
-        summonSequenceActive = false;
-        activeSummonedPlane = null;
+        reinforcementSequence.Stop();
         SetAllGunnerColors(normalGunnerColor);
     }
 
@@ -219,7 +213,8 @@ public class TruckBoss : BossBase
             nextAttack = TakeNextBagAttack();
         }
 
-        if (nextAttack == TruckBossAttack.SummonPlanes && summonSequenceActive)
+        if (nextAttack == TruckBossAttack.SummonPlanes
+            && reinforcementSequence.IsActive)
         {
             nextAttack = TruckBossAttack.MachineGun;
         }
@@ -315,7 +310,7 @@ public class TruckBoss : BossBase
             return;
         }
 
-        Vector3 muzzlePosition = GetMuzzlePosition(machineGunMuzzle);
+        Vector3 muzzlePosition = GetPointPosition(machineGunMuzzle);
         Vector2 aimPoint = new Vector2(GetTargetX(), machineAimY);
         Vector2 direction = aimPoint - (Vector2)muzzlePosition;
 
@@ -337,7 +332,7 @@ public class TruckBoss : BossBase
             return;
         }
 
-        Vector3 muzzlePosition = GetMuzzlePosition(sniperMuzzle);
+        Vector3 muzzlePosition = GetPointPosition(sniperMuzzle);
         FireNormalBullet(muzzlePosition, lockedSniperDirection, sniperBulletSpeed);
         sniperShotsFired = sniperShotsFired + 1;
 
@@ -363,8 +358,11 @@ public class TruckBoss : BossBase
 
     private void LockSniperDirection()
     {
-        Vector3 muzzlePosition = GetMuzzlePosition(sniperMuzzle);
-        Vector3 targetPosition = GetCurrentTargetPosition(muzzlePosition);
+        Vector3 muzzlePosition = GetPointPosition(sniperMuzzle);
+        Vector3 targetPosition = GetTargetPosition(
+            muzzlePosition,
+            minAimY,
+            maxAimY);
         lockedSniperDirection = targetPosition - muzzlePosition;
 
         if (lockedSniperDirection.sqrMagnitude < 0.0001f)
@@ -414,8 +412,11 @@ public class TruckBoss : BossBase
 
     private void LockBazookaTarget()
     {
-        Vector3 muzzlePosition = GetMuzzlePosition(bazookaMuzzle);
-        lockedBazookaTarget = GetCurrentTargetPosition(muzzlePosition);
+        Vector3 muzzlePosition = GetPointPosition(bazookaMuzzle);
+        lockedBazookaTarget = GetTargetPosition(
+            muzzlePosition,
+            minAimY,
+            maxAimY);
     }
 
     private void FireBazookaMissile()
@@ -433,7 +434,7 @@ public class TruckBoss : BossBase
         }
 
         missile.Launch(
-            GetMuzzlePosition(bazookaMuzzle),
+            GetPointPosition(bazookaMuzzle),
             lockedBazookaTarget,
             bazookaMissileSpeed);
     }
@@ -451,86 +452,14 @@ public class TruckBoss : BossBase
 
     private void StartSummonSequence()
     {
-        if (summonCount <= 0)
-        {
-            return;
-        }
-
-        summonIndex = 0;
-        summonTimer = 0f;
-        activeSummonedPlane = null;
-        summonSequenceActive = true;
-        TrySpawnNextPlane();
-    }
-
-    private void UpdateSummonSequence(float deltaTime)
-    {
-        if (summonSequenceActive == false)
-        {
-            return;
-        }
-
-        if (activeSummonedPlane != null)
-        {
-            if (activeSummonedPlane.gameObject.activeSelf)
-            {
-                return;
-            }
-
-            activeSummonedPlane = null;
-            summonTimer = 0f;
-        }
-
-        if (summonIndex >= summonCount)
-        {
-            summonSequenceActive = false;
-            return;
-        }
-
-        summonTimer = summonTimer + deltaTime;
-
-        if (summonTimer < summonInterval)
-        {
-            return;
-        }
-
-        summonTimer = 0f;
-        TrySpawnNextPlane();
-    }
-
-    private void TrySpawnNextPlane()
-    {
-        if (summonIndex >= summonCount)
-        {
-            return;
-        }
-
-        if (enemySpawner == null || enemyPlanePrefab == null)
-        {
-            summonSequenceActive = false;
-            return;
-        }
-
-        float progress = 0.5f;
-
-        if (summonCount > 0)
-        {
-            progress = (summonIndex + 0.5f) / summonCount;
-        }
-
-        float spawnY = Mathf.Lerp(summonMinY, summonMaxY, progress);
-        Vector3 spawnPosition = new Vector3(summonSpawnX, spawnY, 0f);
-        EnemyBase spawnedPlane = enemySpawner.SpawnForBoss(
+        reinforcementSequence.BeginSingle(
+            enemySpawner,
             enemyPlanePrefab,
-            spawnPosition);
-
-        if (spawnedPlane == null)
-        {
-            return;
-        }
-
-        activeSummonedPlane = spawnedPlane;
-        summonIndex = summonIndex + 1;
+            summonCount,
+            summonInterval,
+            summonSpawnX,
+            summonMinY,
+            summonMaxY);
     }
 
     private void UpdateRecover()
@@ -621,16 +550,6 @@ public class TruckBoss : BossBase
         bullet.Launch(position, direction.normalized, speed);
     }
 
-    private Vector3 GetMuzzlePosition(Transform muzzle)
-    {
-        if (muzzle != null)
-        {
-            return muzzle.position;
-        }
-
-        return transform.position;
-    }
-
     private float GetTargetX()
     {
         if (Target != null)
@@ -641,17 +560,6 @@ public class TruckBoss : BossBase
         return transform.position.x - 20f;
     }
 
-    private Vector3 GetCurrentTargetPosition(Vector3 fallbackOrigin)
-    {
-        if (Target != null)
-        {
-            float targetY = Mathf.Clamp(Target.position.y, minAimY, maxAimY);
-            return new Vector3(Target.position.x, targetY, 0f);
-        }
-
-        return fallbackOrigin + Vector3.left * 20f;
-    }
-
     private void UpdateGunnerColors()
     {
         SetAllGunnerColors(normalGunnerColor);
@@ -660,7 +568,10 @@ public class TruckBoss : BossBase
         {
             SetRendererColor(
                 machineGunnerRenderer,
-                FlashBetween(normalGunnerColor, machineGunWarningColor));
+                FlashBetween(
+                    normalGunnerColor,
+                    machineGunWarningColor,
+                    flashSpeed));
             return;
         }
 
@@ -668,7 +579,10 @@ public class TruckBoss : BossBase
         {
             SetRendererColor(
                 sniperRenderer,
-                FlashBetween(normalGunnerColor, sniperWarningColor));
+                FlashBetween(
+                    normalGunnerColor,
+                    sniperWarningColor,
+                    flashSpeed));
             return;
         }
 
@@ -676,13 +590,19 @@ public class TruckBoss : BossBase
         {
             SetRendererColor(
                 bazookaRenderer,
-                FlashBetween(normalGunnerColor, bazookaWarningColor));
+                FlashBetween(
+                    normalGunnerColor,
+                    bazookaWarningColor,
+                    flashSpeed));
             return;
         }
 
         if (attackState == TruckBossState.SummonTelegraph)
         {
-            Color summonColor = FlashBetween(normalGunnerColor, summonWarningColor);
+            Color summonColor = FlashBetween(
+                normalGunnerColor,
+                summonWarningColor,
+                flashSpeed);
             SetAllGunnerColors(summonColor);
         }
     }
@@ -702,12 +622,6 @@ public class TruckBoss : BossBase
         }
 
         targetRenderer.color = color;
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
     }
 
     private void ChangeAttackState(TruckBossState nextState)

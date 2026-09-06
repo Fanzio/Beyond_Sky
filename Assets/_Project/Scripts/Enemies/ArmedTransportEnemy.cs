@@ -18,7 +18,7 @@ public enum ArmedTransportState
 
 // Used by the three city cars and the three sky balloons.
 // Each prefab selects one weapon, performs one attack and then leaves the scene.
-public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
+public class ArmedTransportEnemy : EnemyBase
 {
     [Header("Enemy type")]
     [SerializeField] private ArmedTransportWeapon weapon = ArmedTransportWeapon.MachineGun;
@@ -69,28 +69,12 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
     [SerializeField] private float bazookaShotInterval = 0.45f;
     [SerializeField] private float bazookaMissileSpeed = 18f;
 
-    private Transform target;
-    private BulletPool bulletPool;
-    private ExplosiveMissilePool missilePool;
     private ArmedTransportState state;
     private float stateTimer;
     private float shotTimer;
     private int shotsFired;
     private Vector2 lockedDirection;
     private Vector3 lockedTargetPosition;
-
-    public override void Setup(Transform playerTarget, BulletPool pool)
-    {
-        target = playerTarget;
-        bulletPool = pool;
-    }
-
-    public void SetupSupportPools(
-        ExplosiveMissilePool explosiveMissilePool,
-        AerialMinePool aerialMinePool)
-    {
-        missilePool = explosiveMissilePool;
-    }
 
     public override void Activate(Vector3 startPosition)
     {
@@ -103,7 +87,10 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
         }
         else
         {
-            SetY(PickRandomEntryY());
+            SetY(PickRandomYAwayFromTarget(
+                randomEntryMinY,
+                randomEntryMaxY,
+                minimumYDistanceFromPlayer));
         }
 
         shotsFired = 0;
@@ -168,8 +155,10 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
 
     private void UpdateTelegraphing()
     {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        SetVisualColor(Color.Lerp(normalColor, GetWarningColor(), blend));
+        SetVisualColor(FlashBetween(
+            normalColor,
+            GetWarningColor(),
+            flashSpeed));
 
         if (stateTimer < GetTelegraphDuration())
         {
@@ -252,12 +241,12 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
 
     private void FireBullet()
     {
-        if (bulletPool == null)
+        if (NormalBulletPool == null)
         {
             return;
         }
 
-        Bullet bullet = bulletPool.GetBullet();
+        Bullet bullet = NormalBulletPool.GetBullet();
 
         if (bullet == null)
         {
@@ -271,12 +260,12 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
             speed = sniperBulletSpeed;
         }
 
-        bullet.Launch(GetMuzzlePosition(), lockedDirection, speed);
+        bullet.Launch(GetPointPosition(muzzle), lockedDirection, speed);
     }
 
     private void FireMissile()
     {
-        if (missilePool == null)
+        if (MissilePool == null)
         {
             Debug.LogWarning(
                 "ArmedTransportEnemy: Explosive Missile Pool non assegnata nel roster.",
@@ -284,28 +273,26 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
             return;
         }
 
-        ExplosiveMissile missile = missilePool.GetMissile();
+        ExplosiveMissile missile = MissilePool.GetMissile();
 
         if (missile == null)
         {
             return;
         }
 
+        Vector3 muzzlePosition = GetPointPosition(muzzle);
+        lockedTargetPosition = GetTargetPosition(muzzlePosition, 10f);
+
         missile.Launch(
-            GetMuzzlePosition(),
+            muzzlePosition,
             lockedTargetPosition,
             bazookaMissileSpeed);
     }
 
     private void LockAim()
     {
-        Vector3 muzzlePosition = GetMuzzlePosition();
-        lockedTargetPosition = muzzlePosition + Vector3.left * 10f;
-
-        if (target != null)
-        {
-            lockedTargetPosition = target.position;
-        }
+        Vector3 muzzlePosition = GetPointPosition(muzzle);
+        lockedTargetPosition = GetTargetPosition(muzzlePosition, 10f);
 
         lockedDirection = lockedTargetPosition - muzzlePosition;
 
@@ -315,59 +302,6 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
         }
 
         lockedDirection.Normalize();
-    }
-
-    private Vector3 GetMuzzlePosition()
-    {
-        if (muzzle != null)
-        {
-            return muzzle.position;
-        }
-
-        return transform.position;
-    }
-
-    private float PickRandomEntryY()
-    {
-        float minimum = Mathf.Min(randomEntryMinY, randomEntryMaxY);
-        float maximum = Mathf.Max(randomEntryMinY, randomEntryMaxY);
-
-        if (target == null)
-        {
-            return Random.Range(minimum, maximum);
-        }
-
-        float safeDistance = Mathf.Max(0f, minimumYDistanceFromPlayer);
-        float belowMaximum = Mathf.Min(
-            maximum,
-            target.position.y - safeDistance);
-        float aboveMinimum = Mathf.Max(
-            minimum,
-            target.position.y + safeDistance);
-        bool canSpawnBelow = belowMaximum > minimum;
-        bool canSpawnAbove = aboveMinimum < maximum;
-
-        if (canSpawnBelow && canSpawnAbove)
-        {
-            if (Random.value < 0.5f)
-            {
-                return Random.Range(minimum, belowMaximum);
-            }
-
-            return Random.Range(aboveMinimum, maximum);
-        }
-
-        if (canSpawnBelow)
-        {
-            return Random.Range(minimum, belowMaximum);
-        }
-
-        if (canSpawnAbove)
-        {
-            return Random.Range(aboveMinimum, maximum);
-        }
-
-        return Random.Range(minimum, maximum);
     }
 
     private int GetShotCount()
@@ -449,24 +383,4 @@ public class ArmedTransportEnemy : EnemyBase, IEnemySupportPoolReceiver
         stateTimer = 0f;
     }
 
-    private void MoveBy(float deltaX, float deltaY)
-    {
-        Vector3 position = transform.position;
-        position.x = position.x + deltaX;
-        position.y = position.y + deltaY;
-        transform.position = position;
-    }
-
-    private void SetY(float y)
-    {
-        Vector3 position = transform.position;
-        position.y = y;
-        transform.position = position;
-    }
-
-    private void DeactivateEnemy()
-    {
-        SetVisualColor(normalColor);
-        gameObject.SetActive(false);
-    }
 }

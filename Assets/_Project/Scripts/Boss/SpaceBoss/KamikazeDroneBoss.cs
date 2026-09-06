@@ -74,10 +74,8 @@ public class KamikazeDroneBoss : BossBase
     private float previousMineTargetY;
     private bool hasPreviousMineTarget;
 
-    private bool reinforcementSequenceActive;
-    private int reinforcementsSpawned;
-    private float reinforcementTimer;
-    private EnemyBase activeReinforcement;
+    private BossReinforcementSequence reinforcementSequence =
+        new BossReinforcementSequence();
 
     protected override void OnSetupComplete()
     {
@@ -100,10 +98,7 @@ public class KamikazeDroneBoss : BossBase
         minesDeployed = 0;
         mineDeployTimer = 0f;
         hasPreviousMineTarget = false;
-        reinforcementSequenceActive = false;
-        reinforcementsSpawned = 0;
-        reinforcementTimer = 0f;
-        activeReinforcement = null;
+        reinforcementSequence.Stop();
 
         BuildRuntimeAttackBag();
 
@@ -130,7 +125,7 @@ public class KamikazeDroneBoss : BossBase
     protected override void TickFight(float deltaTime)
     {
         UpdateVerticalMovement(deltaTime);
-        UpdateReinforcementSequence(deltaTime);
+        reinforcementSequence.Tick(deltaTime);
         stateTimer = stateTimer + deltaTime;
 
         if (attackState == KamikazeDroneState.MineTelegraph)
@@ -153,8 +148,7 @@ public class KamikazeDroneBoss : BossBase
 
     protected override void OnDefeatStarted()
     {
-        reinforcementSequenceActive = false;
-        activeReinforcement = null;
+        reinforcementSequence.Stop();
 
         if (minePool != null)
         {
@@ -167,12 +161,15 @@ public class KamikazeDroneBoss : BossBase
         if (attackState == KamikazeDroneState.MineTelegraph
             || attackState == KamikazeDroneState.MineDeploying)
         {
-            return FlashBetween(NormalColor, mineWarningColor);
+            return FlashBetween(NormalColor, mineWarningColor, flashSpeed);
         }
 
         if (attackState == KamikazeDroneState.ReinforcementTelegraph)
         {
-            return FlashBetween(NormalColor, reinforcementWarningColor);
+            return FlashBetween(
+                NormalColor,
+                reinforcementWarningColor,
+                flashSpeed);
         }
 
         return NormalColor;
@@ -193,7 +190,7 @@ public class KamikazeDroneBoss : BossBase
         }
 
         if (nextAttack == KamikazeDroneAttack.Reinforcements
-            && reinforcementSequenceActive)
+            && reinforcementSequence.IsActive)
         {
             nextAttack = KamikazeDroneAttack.AerialMines;
         }
@@ -349,90 +346,14 @@ public class KamikazeDroneBoss : BossBase
 
     private void StartReinforcementSequence()
     {
-        if (reinforcementCount <= 0)
-        {
-            return;
-        }
-
-        reinforcementsSpawned = 0;
-        reinforcementTimer = 0f;
-        activeReinforcement = null;
-        reinforcementSequenceActive = true;
-        TrySpawnNextReinforcement();
-    }
-
-    private void UpdateReinforcementSequence(float deltaTime)
-    {
-        if (reinforcementSequenceActive == false)
-        {
-            return;
-        }
-
-        if (activeReinforcement != null)
-        {
-            if (activeReinforcement.gameObject.activeSelf)
-            {
-                return;
-            }
-
-            activeReinforcement = null;
-            reinforcementTimer = 0f;
-        }
-
-        if (reinforcementsSpawned >= reinforcementCount)
-        {
-            reinforcementSequenceActive = false;
-            return;
-        }
-
-        reinforcementTimer = reinforcementTimer + deltaTime;
-
-        if (reinforcementTimer < reinforcementInterval)
-        {
-            return;
-        }
-
-        reinforcementTimer = 0f;
-        TrySpawnNextReinforcement();
-    }
-
-    private void TrySpawnNextReinforcement()
-    {
-        if (reinforcementsSpawned >= reinforcementCount)
-        {
-            return;
-        }
-
-        if (enemySpawner == null || reinforcementPrefab == null)
-        {
-            reinforcementSequenceActive = false;
-            return;
-        }
-
-        float progress = 0.5f;
-
-        if (reinforcementCount > 0)
-        {
-            progress = (reinforcementsSpawned + 0.5f) / reinforcementCount;
-        }
-
-        float spawnY = Mathf.Lerp(
-            reinforcementMinY,
-            reinforcementMaxY,
-            progress);
-
-        Vector3 spawnPosition = new Vector3(reinforcementSpawnX, spawnY, 0f);
-        EnemyBase spawnedEnemy = enemySpawner.SpawnForBoss(
+        reinforcementSequence.BeginSingle(
+            enemySpawner,
             reinforcementPrefab,
-            spawnPosition);
-
-        if (spawnedEnemy == null)
-        {
-            return;
-        }
-
-        activeReinforcement = spawnedEnemy;
-        reinforcementsSpawned = reinforcementsSpawned + 1;
+            reinforcementCount,
+            reinforcementInterval,
+            reinforcementSpawnX,
+            reinforcementMinY,
+            reinforcementMaxY);
     }
 
     private void UpdateRecover()
@@ -507,12 +428,6 @@ public class KamikazeDroneBoss : BossBase
         }
 
         return transform.position;
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
     }
 
     private void ChangeAttackState(KamikazeDroneState nextState)

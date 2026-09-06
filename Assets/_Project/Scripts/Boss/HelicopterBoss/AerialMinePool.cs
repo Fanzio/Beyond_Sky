@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Pre-creates all mines used by the helicopter boss.
+// Creates every aerial mine before gameplay for bosses and standard enemies.
 public class AerialMinePool : MonoBehaviour
 {
     [Header("Pool")]

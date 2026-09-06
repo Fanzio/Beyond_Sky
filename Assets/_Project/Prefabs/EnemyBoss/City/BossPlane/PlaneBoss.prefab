@@ -101,7 +101,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2111045798151133003
 Transform:
   m_ObjectHideFlags: 0
@@ -206,7 +206,7 @@ MonoBehaviour:
   heavyTelegraphDuration: 1.1
   heavyBulletSpeed: 34
   enemySpawner: {fileID: 0}
-  enemyPlanePrefab: {fileID: 4886782355545905879, guid: 26bc7ecf277ac6b4c8fa85082a52aa01, type: 3}
+  enemyPlanePrefab: {fileID: 4886782355545905879, guid: 858f2dc72d162ba4396be0eee61b7971, type: 3}
   summonCount: 4
   summonTelegraphDuration: 0.8
   summonInterval: 0.35
@@ -214,7 +214,7 @@ MonoBehaviour:
   summonMinY: 13
   summonMaxY: 27
   recoverDuration: 0.7
-  muzzle: {fileID: 0}
+  muzzle: {fileID: 6897405356713358071}
 --- !u!1 &8746714513456495033
 GameObject:
   m_ObjectHideFlags: 0

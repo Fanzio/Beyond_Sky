@@ -8,18 +8,8 @@ public enum DiveState
     Explode
 }
 
-// An enemy that enters, marks a target point, flashes, then charges straight at it.
-// With explodesOnArrival off it is a diving bird that flies past; with it on it is a
-// kamikaze that detonates where it was aiming.
-//
-// The aim is locked when the telegraph BEGINS, not when the dive starts. That is the
-// whole fairness of the move: the flash is the window in which the player reads where it
-// is going and gets out of the way. An enemy that tracked until launch would arrive
-// wherever the player is, and no amount of skill would change that - only the dodge.
-//
-// It also never turns during the dive, so once it has committed the player can read its
-// path perfectly. Same rule as the shooting enemy: commit, then no more information
-// changes hands.
+// Locks its target before the warning so the committed dive remains readable and avoidable.
+// A destroyed kamikaze still explodes, rewarding players who shoot it before it gets close.
 public class DivingEnemy : EnemyBase
 {
     [Header("Visual")]
@@ -42,24 +32,22 @@ public class DivingEnemy : EnemyBase
     [SerializeField] private float minY = 12f;
     [SerializeField] private float maxY = 28f;
 
+    [Header("Player contact")]
+    [SerializeField] private LayerMask playerLayers;
+    [SerializeField] private float contactRadius = 0.5f;
+
     [Header("Explosion - leave off for a plain diver")]
     [SerializeField] private bool explodesOnArrival;
     [SerializeField] private GameObject explosionVisual;
     [SerializeField] private float explosionRadius = 2f;
     [SerializeField] private float explosionDuration = 0.35f;
-    [SerializeField] private LayerMask playerLayers;
 
-    private Transform target;
     private DiveState state;
     private float stateTimer;
     private Vector2 diveDirection;
     private Vector3 aimPoint;
     private bool hasDamaged;
 
-    public override void Setup(Transform playerTarget, BulletPool pool)
-    {
-        target = playerTarget;
-    }
     public override void Activate(Vector3 startPosition)
     {
         transform.position = startPosition;
@@ -74,8 +62,7 @@ public class DivingEnemy : EnemyBase
         ChangeState(DiveState.Enter);
         gameObject.SetActive(true);
     }
-    // A shot kamikaze still goes off. Killing one next to you gets you killed anyway,
-    // which turns "shoot it" into "shoot it EARLY" - a decision instead of a reflex.
+
     public override void TakeBulletHit()
     {
         if (explodesOnArrival && state == DiveState.Dive)
@@ -83,8 +70,9 @@ public class DivingEnemy : EnemyBase
             BeginExplosion();
             return;
         }
-        gameObject.SetActive(false);
+        DeactivateEnemy();
     }
+
     private void Update()
     {
         float deltaTime = Time.deltaTime;
@@ -107,6 +95,7 @@ public class DivingEnemy : EnemyBase
         }
         UpdateDive(deltaTime);
     }
+
     private void UpdateEnter(float deltaTime)
     {
         MoveBy(-enterSpeed * deltaTime, 0f);
@@ -119,10 +108,11 @@ public class DivingEnemy : EnemyBase
         LockAim();
         ChangeState(DiveState.Telegraph);
     }
+
     private void LockAim()
     {
-        float targetY = Mathf.Clamp(target.position.y, minY, maxY);
-        aimPoint = new Vector3(target.position.x, targetY, 0f);
+        float targetY = Mathf.Clamp(Target.position.y, minY, maxY);
+        aimPoint = new Vector3(Target.position.x, targetY, 0f);
 
         Vector2 toTarget = new Vector2(
             aimPoint.x - transform.position.x,
@@ -131,10 +121,10 @@ public class DivingEnemy : EnemyBase
         diveDirection = toTarget.normalized;
         PointVisualAlong(diveDirection);
     }
+
     private void UpdateTelegraph()
     {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        bodyRenderer.color = Color.Lerp(normalColor, telegraphColor, blend);
+        bodyRenderer.color = FlashBetween(normalColor, telegraphColor, flashSpeed);
 
         if (stateTimer < telegraphDuration)
         {
@@ -144,9 +134,17 @@ public class DivingEnemy : EnemyBase
         bodyRenderer.color = normalColor;
         ChangeState(DiveState.Dive);
     }
+
     private void UpdateDive(float deltaTime)
     {
-        MoveBy(diveDirection.x * diveSpeed * deltaTime, diveDirection.y * diveSpeed * deltaTime);
+        Vector2 step = diveDirection * diveSpeed * deltaTime;
+
+        if (CheckPlayerContact(step))
+        {
+            return;
+        }
+
+        MoveBy(step.x, step.y);
 
         if (explodesOnArrival && HasReachedAimPoint())
         {
@@ -157,16 +155,53 @@ public class DivingEnemy : EnemyBase
         {
             return;
         }
-        gameObject.SetActive(false);
+        DeactivateEnemy();
     }
+
+    private bool CheckPlayerContact(Vector2 step)
+    {
+        if (step.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        RaycastHit2D hit = Physics2D.CircleCast(
+            transform.position,
+            contactRadius,
+            step.normalized,
+            step.magnitude,
+            playerLayers);
+
+        if (hit.collider == null)
+        {
+            return false;
+        }
+
+        if (explodesOnArrival)
+        {
+            Vector3 impactPosition = transform.position;
+            impactPosition.x = hit.point.x;
+            impactPosition.y = hit.point.y;
+            transform.position = impactPosition;
+            BeginExplosion();
+            return true;
+        }
+
+        PlaneCollision plane = hit.collider.GetComponentInParent<PlaneCollision>();
+
+        if (plane != null)
+        {
+            plane.TakeHit();
+        }
+
+        return false;
+    }
+
     private bool HasReachedAimPoint()
     {
         return transform.position.x <= aimPoint.x;
     }
 
-    // The blast is a one-off overlap on the frame it goes off, not a lingering trigger.
-    // A kamikaze that kept killing for the length of its animation would take out players
-    // who had already cleared it, and there would be no way to tell that from a bug.
     private void BeginExplosion()
     {
         ChangeState(DiveState.Explode);
@@ -179,6 +214,7 @@ public class DivingEnemy : EnemyBase
         }
         DealBlastDamage();
     }
+
     private void DealBlastDamage()
     {
         if (hasDamaged)
@@ -203,6 +239,7 @@ public class DivingEnemy : EnemyBase
         }
         plane.TakeHit();
     }
+
     private void UpdateExplosion()
     {
         if (stateTimer < explosionDuration)
@@ -215,8 +252,9 @@ public class DivingEnemy : EnemyBase
             explosionVisual.SetActive(false);
         }
         bodyRenderer.enabled = true;
-        gameObject.SetActive(false);
+        DeactivateEnemy();
     }
+
     private void PointVisualAlong(Vector2 direction)
     {
         if (visual == null)
@@ -227,25 +265,23 @@ public class DivingEnemy : EnemyBase
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         visual.localRotation = Quaternion.Euler(0f, 0f, angle + 180f);
     }
+
     private void ChangeState(DiveState nextState)
     {
         state = nextState;
         stateTimer = 0f;
     }
+
     private void OnDrawGizmosSelected()
     {
-        if (explodesOnArrival == false)
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, contactRadius);
+
+        if (explodesOnArrival)
         {
-            return;
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius);
         }
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, explosionRadius);
     }
-    private void MoveBy(float deltaX, float deltaY)
-    {
-        Vector3 position = transform.position;
-        position.x = position.x + deltaX;
-        position.y = position.y + deltaY;
-        transform.position = position;
-    }
+
 }

@@ -1,8 +1,7 @@
 using UnityEngine;
 
-// Collects pickups with an overlap check, the same approach as the close call detector.
-// Triggers would need a Rigidbody2D on every collectable and behave badly on colliders
-// that move as part of a scrolling chunk.
+// Uses overlap detection because pickups move with recycled chunks and do not need their
+// own Rigidbody2D.
 public class PickupCollector : MonoBehaviour
 {
     [Header("References")]
@@ -29,13 +28,16 @@ public class PickupCollector : MonoBehaviour
             {
                 continue;
             }
+
             if (pickup.IsCollected)
             {
                 continue;
             }
+
             Collect(pickup);
         }
     }
+
     private void Collect(Pickup pickup)
     {
         pickup.Collect();
@@ -45,16 +47,19 @@ public class PickupCollector : MonoBehaviour
             scoreManager.AddCoin(pickup.Amount);
             return;
         }
+
         if (pickup.Type == PickupType.Shield)
         {
             planeShield.GrantShield();
             return;
         }
+
         if (pickup.Type == PickupType.Ammo)
         {
             planeWeapon.AddAmmo(pickup.Amount);
         }
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.magenta;

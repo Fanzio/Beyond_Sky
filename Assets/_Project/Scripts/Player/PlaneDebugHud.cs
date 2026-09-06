@@ -1,11 +1,8 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Throwaway on screen readout for tuning. Uses OnGUI on purpose: no setup at all,
-// and it gets deleted once the real HUD exists.
-//
-// The dodge cooldown belongs on the real HUD as well, not just here. A recharge the
-// player cannot see turns every death into a coin flip.
+// Displays live gameplay values, boss health and game-over information without requiring
+// a separate Canvas hierarchy.
 public class PlaneDebugHud : MonoBehaviour
 {
     [SerializeField] private PlaneController planeController;
@@ -35,19 +32,23 @@ public class PlaneDebugHud : MonoBehaviour
         {
             return;
         }
+
         if (Keyboard.current.nKey.wasPressedThisFrame)
         {
             floorManager.NotifyBossDefeated();
         }
     }
+
     private void TrackFps()
     {
         if (Time.unscaledDeltaTime <= 0f)
         {
             return;
         }
+
         fps = Mathf.Lerp(fps, 1f / Time.unscaledDeltaTime, 0.08f);
     }
+
     private void OnGUI()
     {
         BuildStyles();
@@ -102,6 +103,7 @@ public class PlaneDebugHud : MonoBehaviour
         DrawCloseCallFlash();
         DrawBossBar();
     }
+
     private void DrawBossBar()
     {
         if (bossManager.IsFightActive == false)
@@ -119,6 +121,7 @@ public class PlaneDebugHud : MonoBehaviour
         GUI.Label(new Rect(x, 50f, width, 40f),
             "BOSS  " + bossManager.CurrentBoss.TimeRemaining.ToString("F1"), style);
     }
+
     private void DrawRect(Rect rect, Color color)
     {
         Color previous = GUI.color;
@@ -126,6 +129,7 @@ public class PlaneDebugHud : MonoBehaviour
         GUI.DrawTexture(rect, Texture2D.whiteTexture);
         GUI.color = previous;
     }
+
     private string BuildAmmoBar()
     {
         string bar = "";
@@ -135,8 +139,10 @@ public class PlaneDebugHud : MonoBehaviour
         {
             bar = bar + "|";
         }
+
         return bar;
     }
+
     private void DrawCloseCallFlash()
     {
         if (closeCallDetector.TimeSinceLastCloseCall > closeCallFlashTime)
@@ -150,8 +156,10 @@ public class PlaneDebugHud : MonoBehaviour
         {
             text = "CLOSE CALL  +1 MUNIZIONE";
         }
+
         GUI.Label(new Rect(Screen.width * 0.5f - 200f, 80f, 400f, 80f), text, flashStyle);
     }
+
     private void DrawGameOver()
     {
         string record = "";
@@ -160,12 +168,14 @@ public class PlaneDebugHud : MonoBehaviour
         {
             record = "   NUOVO RECORD";
         }
+
         string prompt = "";
 
         if (gameManager.CanRestart)
         {
             prompt = "\n\ntap to restart";
         }
+
         string text =
             "GAME OVER" + record + "\n" +
             "Score " + scoreManager.Score + "\n" +
@@ -173,6 +183,7 @@ public class PlaneDebugHud : MonoBehaviour
 
         GUI.Label(new Rect(24f, 24f, 620f, 260f), text, style);
     }
+
     private void BuildStyles()
     {
         if (style != null)

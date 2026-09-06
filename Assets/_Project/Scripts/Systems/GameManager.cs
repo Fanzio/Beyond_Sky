@@ -2,15 +2,8 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
-// Run states: playing, ascending, game over.
-//
-// Game over freezes the game with timeScale. That stops everything in one line, so no
-// other script has to know the state exists. Update still runs while frozen - only
-// Time.deltaTime and physics are scaled - so input keeps working.
-//
-// Restarting simply reloads the scene. It looks blunt but it is the right call here:
-// every system starts clean with no reset method to write, and nothing can be forgotten.
-// The best score survives because it lives in PlayerPrefs.
+// Owns the run state. Game over freezes scaled gameplay while unscaled restart input
+// remains available. Reloading the scene guarantees that every system starts clean.
 public class GameManager : MonoBehaviour
 {
     [Header("References")]
@@ -28,37 +21,27 @@ public class GameManager : MonoBehaviour
     {
         get { return isGameOver; }
     }
+
     public bool IsAscending
     {
         get { return isAscending; }
     }
-    public void SetAscending(bool ascending)
-    {
-        isAscending = ascending;
-    }
+
     public bool IsNewRecord
     {
         get { return isNewRecord; }
     }
+
     public bool CanRestart
     {
         get { return isGameOver && Time.unscaledTime - gameOverTime >= restartDelay; }
     }
-    private void Awake()
+
+    public void SetAscending(bool ascending)
     {
-        Time.timeScale = 1f;
+        isAscending = ascending;
     }
-    private void Update()
-    {
-        if (CanRestart == false)
-        {
-            return;
-        }
-        if (WasTapped())
-        {
-            Restart();
-        }
-    }
+
     public void GameOver()
     {
         if (isGameOver)
@@ -73,12 +56,32 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 0f;
     }
+
     public void Restart()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    private bool WasTapped()
+
+    private void Awake()
+    {
+        Time.timeScale = 1f;
+    }
+
+    private void Update()
+    {
+        if (CanRestart == false)
+        {
+            return;
+        }
+
+        if (WasRestartInputPressed())
+        {
+            Restart();
+        }
+    }
+
+    private bool WasRestartInputPressed()
     {
         if (Touchscreen.current != null)
         {
@@ -87,6 +90,7 @@ public class GameManager : MonoBehaviour
                 return true;
             }
         }
+
         if (Mouse.current != null)
         {
             if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -94,6 +98,7 @@ public class GameManager : MonoBehaviour
                 return true;
             }
         }
+
         return false;
     }
 }

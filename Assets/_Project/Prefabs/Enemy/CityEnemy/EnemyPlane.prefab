@@ -179,15 +179,18 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   telegraphColor: {r: 1, g: 0, b: 0, a: 1}
   flashSpeed: 10
-  matchDuration: 1.2
+  stayDuration: 4
+  alignTolerance: 0.6
   telegraphDuration: 0.9
-  leaveDuration: 1.4
+  shotCooldown: 1.1
   enterSpeed: 28
   holdX: 11
   trackSpeed: 7
   leaveSpeed: 36
+  leaveDuration: 1.4
   minY: 12
   maxY: 28
+  muzzle: {fileID: 6897405356713358071}
   bulletSpeed: 22
 --- !u!1 &8746714513456495033
 GameObject:

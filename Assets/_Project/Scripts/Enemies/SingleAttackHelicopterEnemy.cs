@@ -22,7 +22,7 @@ public enum StandardHelicopterState
 }
 
 // Enters, randomly chooses one complete HelicopterBoss ability and leaves.
-public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
+public class SingleAttackHelicopterEnemy : EnemyBase
 {
     [Header("Visual")]
     [SerializeField] private SpriteRenderer bodyRenderer;
@@ -82,9 +82,6 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
     [SerializeField] private float warningLineLeftX = -16f;
     [SerializeField] private float warningLineRightX = 16f;
 
-    private Transform target;
-    private BulletPool bulletPool;
-    private AerialMinePool minePool;
     private StandardHelicopterAttack chosenAttack;
     private StandardHelicopterState state;
     private float stateTimer;
@@ -95,8 +92,7 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
 
     public override void Setup(Transform playerTarget, BulletPool pool)
     {
-        target = playerTarget;
-        bulletPool = pool;
+        base.Setup(playerTarget, pool);
 
         if (strafeWarningLine != null)
         {
@@ -106,18 +102,14 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
         }
     }
 
-    public void SetupSupportPools(
-        ExplosiveMissilePool explosiveMissilePool,
-        AerialMinePool aerialMinePool)
-    {
-        minePool = aerialMinePool;
-    }
-
     public override void Activate(Vector3 startPosition)
     {
         transform.position = startPosition;
         transform.rotation = Quaternion.identity;
-        SetY(PickRandomEntryY());
+        SetY(PickRandomYAwayFromTarget(
+            randomEntryMinY,
+            randomEntryMaxY,
+            minimumYDistanceFromPlayer));
         chosenAttack = (StandardHelicopterAttack)Random.Range(0, 3);
         fanVolleysFired = 0;
         minesDeployed = 0;
@@ -266,13 +258,13 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
 
     private void FireFanVolley()
     {
-        if (bulletPool == null)
+        if (NormalBulletPool == null)
         {
             return;
         }
 
         Vector3 muzzlePosition = GetPointPosition(gunMuzzle);
-        Vector2 baseDirection = GetTargetPosition(muzzlePosition) - muzzlePosition;
+        Vector2 baseDirection = GetTargetPosition(muzzlePosition, 10f) - muzzlePosition;
 
         if (baseDirection.sqrMagnitude < 0.0001f)
         {
@@ -285,7 +277,7 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
 
         for (int i = 0; i < safeBulletCount; i++)
         {
-            Bullet bullet = bulletPool.GetBullet();
+            Bullet bullet = NormalBulletPool.GetBullet();
 
             if (bullet == null)
             {
@@ -343,9 +335,9 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
         float targetY = Mathf.Lerp(mineMinY, mineMaxY, progress);
         Vector3 destination = new Vector3(mineFieldX, targetY, 0f);
 
-        if (minePool != null)
+        if (MinePool != null)
         {
-            AerialMine mine = minePool.GetMine();
+            AerialMine mine = MinePool.GetMine();
 
             if (mine != null)
             {
@@ -369,9 +361,9 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
     {
         float targetY = transform.position.y;
 
-        if (target != null)
+        if (Target != null)
         {
-            targetY = Mathf.Clamp(target.position.y, minAimY, maxAimY);
+            targetY = Mathf.Clamp(Target.position.y, minAimY, maxAimY);
         }
 
         float alignedY = Mathf.MoveTowards(
@@ -505,8 +497,7 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
 
     private void SetFlashingColor(Color warningColor)
     {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        SetBodyColor(Color.Lerp(normalColor, warningColor, blend));
+        SetBodyColor(FlashBetween(normalColor, warningColor, flashSpeed));
     }
 
     private void UpdateWarningLine(float y)
@@ -528,69 +519,6 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
         }
     }
 
-    private Vector3 GetPointPosition(Transform point)
-    {
-        if (point != null)
-        {
-            return point.position;
-        }
-
-        return transform.position;
-    }
-
-    private Vector3 GetTargetPosition(Vector3 fallbackOrigin)
-    {
-        if (target != null)
-        {
-            return target.position;
-        }
-
-        return fallbackOrigin + Vector3.left * 10f;
-    }
-
-    private float PickRandomEntryY()
-    {
-        float minimum = Mathf.Min(randomEntryMinY, randomEntryMaxY);
-        float maximum = Mathf.Max(randomEntryMinY, randomEntryMaxY);
-
-        if (target == null)
-        {
-            return Random.Range(minimum, maximum);
-        }
-
-        float safeDistance = Mathf.Max(0f, minimumYDistanceFromPlayer);
-        float belowMaximum = Mathf.Min(
-            maximum,
-            target.position.y - safeDistance);
-        float aboveMinimum = Mathf.Max(
-            minimum,
-            target.position.y + safeDistance);
-        bool canSpawnBelow = belowMaximum > minimum;
-        bool canSpawnAbove = aboveMinimum < maximum;
-
-        if (canSpawnBelow && canSpawnAbove)
-        {
-            if (Random.value < 0.5f)
-            {
-                return Random.Range(minimum, belowMaximum);
-            }
-
-            return Random.Range(aboveMinimum, maximum);
-        }
-
-        if (canSpawnBelow)
-        {
-            return Random.Range(minimum, belowMaximum);
-        }
-
-        if (canSpawnAbove)
-        {
-            return Random.Range(aboveMinimum, maximum);
-        }
-
-        return Random.Range(minimum, maximum);
-    }
-
     private void ChangeState(StandardHelicopterState nextState)
     {
         state = nextState;
@@ -603,28 +531,6 @@ public class SingleAttackHelicopterEnemy : EnemyBase, IEnemySupportPoolReceiver
         {
             bodyRenderer.color = color;
         }
-    }
-
-    private void MoveBy(float deltaX, float deltaY)
-    {
-        Vector3 position = transform.position;
-        position.x = position.x + deltaX;
-        position.y = position.y + deltaY;
-        transform.position = position;
-    }
-
-    private void SetY(float y)
-    {
-        Vector3 position = transform.position;
-        position.y = y;
-        transform.position = position;
-    }
-
-    private void DeactivateEnemy()
-    {
-        SetWarningLineVisible(false);
-        SetBodyColor(normalColor);
-        gameObject.SetActive(false);
     }
 
     private void OnDrawGizmosSelected()

@@ -49,6 +49,11 @@ public abstract class BossBase : MonoBehaviour
         get { return lifeState == BossLifeState.Fighting; }
     }
 
+    public bool IsDefeated
+    {
+        get { return lifeState == BossLifeState.Defeated; }
+    }
+
     public float TimeRemaining
     {
         get { return timeRemaining; }
@@ -194,6 +199,104 @@ public abstract class BossBase : MonoBehaviour
         Vector3 position = transform.position;
         position.y = y;
         transform.position = position;
+    }
+
+    protected void TrackTargetY(float speed, float minY, float maxY, float deltaTime)
+    {
+        TrackPointToTargetY(null, speed, minY, maxY, deltaTime);
+    }
+
+    protected void TrackPointToTargetY(
+        Transform point,
+        float speed,
+        float minY,
+        float maxY,
+        float deltaTime)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        float pointY = GetPointPosition(point).y;
+        MoveReferenceYToTarget(pointY, speed, minY, maxY, deltaTime);
+    }
+
+    protected void TrackPointPairToTargetY(
+        Transform firstPoint,
+        Transform secondPoint,
+        float speed,
+        float minY,
+        float maxY,
+        float deltaTime)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        float referenceY = transform.position.y;
+
+        if (firstPoint != null && secondPoint != null)
+        {
+            referenceY = (firstPoint.position.y + secondPoint.position.y) * 0.5f;
+        }
+        else if (firstPoint != null)
+        {
+            referenceY = firstPoint.position.y;
+        }
+        else if (secondPoint != null)
+        {
+            referenceY = secondPoint.position.y;
+        }
+
+        MoveReferenceYToTarget(referenceY, speed, minY, maxY, deltaTime);
+    }
+
+    protected Vector3 GetPointPosition(Transform point)
+    {
+        if (point != null)
+        {
+            return point.position;
+        }
+
+        return transform.position;
+    }
+
+    protected Vector3 GetTargetPosition(
+        Vector3 fallbackOrigin,
+        float minY,
+        float maxY)
+    {
+        if (target != null)
+        {
+            float targetY = Mathf.Clamp(target.position.y, minY, maxY);
+            return new Vector3(target.position.x, targetY, 0f);
+        }
+
+        return fallbackOrigin + Vector3.left * 20f;
+    }
+
+    protected Color FlashBetween(Color from, Color to, float speed)
+    {
+        float blend = Mathf.PingPong(Time.time * speed, 1f);
+        return Color.Lerp(from, to, blend);
+    }
+
+    private void MoveReferenceYToTarget(
+        float referenceY,
+        float speed,
+        float minY,
+        float maxY,
+        float deltaTime)
+    {
+        float targetY = Mathf.Clamp(target.position.y, minY, maxY);
+        float distanceToTarget = targetY - referenceY;
+        float movement = Mathf.MoveTowards(
+            0f,
+            distanceToTarget,
+            speed * deltaTime);
+        MoveBy(0f, movement);
     }
 
     private void UpdateEntry(float deltaTime)

@@ -1,21 +1,7 @@
 using UnityEngine;
 
-// Rewards flying close to obstacles without touching them.
-//
-// The payout is AMMO, not speed. Speed is the difficulty ramp in this genre, so paying a
-// risky move with speed would reward skill by making the game harder, and players stop
-// doing that once they notice. Ammo is the one scarce resource, so skilled flying is what
-// arms you for the boss: fly well and arrive loaded, play safe and arrive empty handed.
-//
-// The plane is fixed on X and obstacles scroll past, so the closest approach always
-// happens on the frame an obstacle crosses the plane's X. Catch that one frame and award.
-// No state has to be tracked over time.
-//
-// The reward is all or nothing. Anything the overlap finds is already inside the radius,
-// so no distance check is needed: you either threaded the gap or you did not.
-//
-// Close calls are ignored while rolling, or the best play would be to double tap straight
-// into every obstacle and collect the bonus every time.
+// Rewards close obstacle passes with ammunition instead of increasing the difficulty speed.
+// Rolling is excluded so invulnerability cannot be used to collect risk-free close calls.
 public class CloseCallDetector : MonoBehaviour
 {
     [Header("References")]
@@ -40,18 +26,22 @@ public class CloseCallDetector : MonoBehaviour
     {
         get { return closeCallCount; }
     }
+
     public int ProgressToAmmo
     {
         get { return progressToAmmo; }
     }
+
     public int CloseCallsPerAmmo
     {
         get { return closeCallsPerAmmo; }
     }
+
     public bool LastAwardedAmmo
     {
         get { return lastAwardedAmmo; }
     }
+
     public float TimeSinceLastCloseCall
     {
         get { return Time.time - lastCloseCallTime; }
@@ -79,6 +69,7 @@ public class CloseCallDetector : MonoBehaviour
             Award();
         }
     }
+
     private bool HasJustCrossed(Collider2D obstacle, float planeX, float step)
     {
         float x = obstacle.bounds.center.x;
@@ -93,6 +84,7 @@ public class CloseCallDetector : MonoBehaviour
         }
         return true;
     }
+
     private void Award()
     {
         lastCloseCallTime = Time.time;
@@ -109,6 +101,7 @@ public class CloseCallDetector : MonoBehaviour
         lastAwardedAmmo = true;
         planeWeapon.AddAmmo(1);
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;

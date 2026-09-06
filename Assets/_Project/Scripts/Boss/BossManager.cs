@@ -4,19 +4,44 @@ using UnityEngine;
 [System.Serializable]
 public class WeightedBossEntry
 {
-    public BossBase boss;
+    [SerializeField] private BossBase boss;
 
     [Min(0f)]
-    public float weight = 1f;
+    [SerializeField] private float weight = 1f;
 
-    public Vector2 spawnPosition = new Vector2(30f, 20f);
+    [SerializeField] private Vector2 spawnPosition = new Vector2(30f, 20f);
+
+    public BossBase Boss
+    {
+        get { return boss; }
+    }
+
+    public float Weight
+    {
+        get { return weight; }
+    }
+
+    public Vector2 SpawnPosition
+    {
+        get { return spawnPosition; }
+    }
 }
 
 [System.Serializable]
 public class FloorBossPool
 {
-    public string floorName = "Floor";
-    public WeightedBossEntry[] bosses;
+    [SerializeField] private string floorName = "Floor";
+    [SerializeField] private WeightedBossEntry[] bosses;
+
+    public string FloorName
+    {
+        get { return floorName; }
+    }
+
+    public WeightedBossEntry[] Bosses
+    {
+        get { return bosses; }
+    }
 }
 
 // Chooses one weighted boss for every floor at the beginning of the run.
@@ -30,13 +55,14 @@ public class BossManager : MonoBehaviour
     [SerializeField] private BulletPool bulletPool;
     [SerializeField] private AscensionSequence ascensionSequence;
 
+    [Header("Cleanup after a boss defeat")]
+    [SerializeField] private EnemySpawner enemySpawner;
+    [SerializeField] private BulletPool[] additionalBulletPools;
+    [SerializeField] private ExplosiveMissilePool[] explosiveMissilePools;
+    [SerializeField] private AerialMinePool[] aerialMinePools;
+
     [Header("Weighted boss pools - 0 city, 1 sky, 2 space")]
     [SerializeField] private FloorBossPool[] bossPoolsByFloor;
-
-    [Header("Legacy fallback while pools are being configured")]
-    [SerializeField] private BossBase[] bossesByFloor;
-    [SerializeField] private float fallbackSpawnX = 30f;
-    [SerializeField] private float fallbackSpawnY = 20f;
 
     [Header("Timing")]
     [SerializeField] private float arenaLeadTime = 2.5f;
@@ -46,6 +72,7 @@ public class BossManager : MonoBehaviour
     private bool isArenaActive;
     private bool isFightActive;
     private bool ascensionStarted;
+    private bool defeatCleanupCompleted;
     private float leadTimer;
 
     public bool IsArenaActive
@@ -109,33 +136,23 @@ public class BossManager : MonoBehaviour
             {
                 FloorBossPool floorPool = bossPoolsByFloor[floor];
 
-                if (floorPool == null || floorPool.bosses == null)
+                if (floorPool == null || floorPool.Bosses == null)
                 {
                     continue;
                 }
 
-                for (int entry = 0; entry < floorPool.bosses.Length; entry++)
+                for (int entry = 0; entry < floorPool.Bosses.Length; entry++)
                 {
-                    WeightedBossEntry bossEntry = floorPool.bosses[entry];
+                    WeightedBossEntry bossEntry = floorPool.Bosses[entry];
 
                     if (bossEntry == null)
                     {
                         continue;
                     }
 
-                    PrepareBossOnce(bossEntry.boss, preparedBosses);
+                    PrepareBossOnce(bossEntry.Boss, preparedBosses);
                 }
             }
-        }
-
-        if (bossesByFloor == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < bossesByFloor.Length; i++)
-        {
-            PrepareBossOnce(bossesByFloor[i], preparedBosses);
         }
     }
 
@@ -174,7 +191,7 @@ public class BossManager : MonoBehaviour
 
     private WeightedBossEntry SelectWeightedEntry(FloorBossPool floorPool)
     {
-        if (floorPool == null || floorPool.bosses == null)
+        if (floorPool == null || floorPool.Bosses == null)
         {
             return null;
         }
@@ -182,21 +199,21 @@ public class BossManager : MonoBehaviour
         float totalWeight = 0f;
         WeightedBossEntry lastWeightedEntry = null;
 
-        for (int i = 0; i < floorPool.bosses.Length; i++)
+        for (int i = 0; i < floorPool.Bosses.Length; i++)
         {
-            WeightedBossEntry entry = floorPool.bosses[i];
+            WeightedBossEntry entry = floorPool.Bosses[i];
 
-            if (entry == null || entry.boss == null)
+            if (entry == null || entry.Boss == null)
             {
                 continue;
             }
 
-            if (entry.weight <= 0f)
+            if (entry.Weight <= 0f)
             {
                 continue;
             }
 
-            totalWeight = totalWeight + entry.weight;
+            totalWeight = totalWeight + entry.Weight;
             lastWeightedEntry = entry;
         }
 
@@ -208,21 +225,21 @@ public class BossManager : MonoBehaviour
         float roll = Random.value * totalWeight;
         float accumulatedWeight = 0f;
 
-        for (int i = 0; i < floorPool.bosses.Length; i++)
+        for (int i = 0; i < floorPool.Bosses.Length; i++)
         {
-            WeightedBossEntry entry = floorPool.bosses[i];
+            WeightedBossEntry entry = floorPool.Bosses[i];
 
-            if (entry == null || entry.boss == null)
+            if (entry == null || entry.Boss == null)
             {
                 continue;
             }
 
-            if (entry.weight <= 0f)
+            if (entry.Weight <= 0f)
             {
                 continue;
             }
 
-            accumulatedWeight = accumulatedWeight + entry.weight;
+            accumulatedWeight = accumulatedWeight + entry.Weight;
 
             if (roll <= accumulatedWeight)
             {
@@ -235,16 +252,16 @@ public class BossManager : MonoBehaviour
 
     private WeightedBossEntry FindFirstValidEntry(FloorBossPool floorPool)
     {
-        for (int i = 0; i < floorPool.bosses.Length; i++)
+        for (int i = 0; i < floorPool.Bosses.Length; i++)
         {
-            if (floorPool.bosses[i] == null)
+            if (floorPool.Bosses[i] == null)
             {
                 continue;
             }
 
-            if (floorPool.bosses[i].boss != null)
+            if (floorPool.Bosses[i].Boss != null)
             {
-                return floorPool.bosses[i];
+                return floorPool.Bosses[i];
             }
         }
 
@@ -283,6 +300,7 @@ public class BossManager : MonoBehaviour
         }
 
         activeBoss.Activate(GetSpawnPositionForFloor(floorIndex));
+        defeatCleanupCompleted = false;
         isFightActive = true;
     }
 
@@ -293,6 +311,12 @@ public class BossManager : MonoBehaviour
             isFightActive = false;
             isArenaActive = false;
             return;
+        }
+
+        if (activeBoss.IsDefeated && defeatCleanupCompleted == false)
+        {
+            defeatCleanupCompleted = true;
+            ClearArenaHazards();
         }
 
         if (activeBoss.IsFinished == false)
@@ -318,26 +342,66 @@ public class BossManager : MonoBehaviour
         activeBoss = null;
     }
 
+    private void ClearArenaHazards()
+    {
+        if (enemySpawner != null)
+        {
+            enemySpawner.DespawnAllEnemies();
+        }
+
+        if (bulletPool != null)
+        {
+            bulletPool.DespawnAll();
+        }
+
+        if (additionalBulletPools != null)
+        {
+            for (int i = 0; i < additionalBulletPools.Length; i++)
+            {
+                BulletPool additionalPool = additionalBulletPools[i];
+
+                if (additionalPool == null || additionalPool == bulletPool)
+                {
+                    continue;
+                }
+
+                additionalPool.DespawnAll();
+            }
+        }
+
+        if (explosiveMissilePools != null)
+        {
+            for (int i = 0; i < explosiveMissilePools.Length; i++)
+            {
+                if (explosiveMissilePools[i] != null)
+                {
+                    explosiveMissilePools[i].DespawnAll();
+                }
+            }
+        }
+
+        if (aerialMinePools != null)
+        {
+            for (int i = 0; i < aerialMinePools.Length; i++)
+            {
+                if (aerialMinePools[i] != null)
+                {
+                    aerialMinePools[i].DespawnAll();
+                }
+            }
+        }
+    }
+
     private BossBase GetBossForFloor(int floorIndex)
     {
         WeightedBossEntry selectedEntry = GetSelectedEntryForFloor(floorIndex);
 
-        if (selectedEntry != null && selectedEntry.boss != null)
+        if (selectedEntry != null && selectedEntry.Boss != null)
         {
-            return selectedEntry.boss;
+            return selectedEntry.Boss;
         }
 
-        if (bossesByFloor == null)
-        {
-            return null;
-        }
-
-        if (floorIndex < 0 || floorIndex >= bossesByFloor.Length)
-        {
-            return null;
-        }
-
-        return bossesByFloor[floorIndex];
+        return null;
     }
 
     private Vector3 GetSpawnPositionForFloor(int floorIndex)
@@ -347,12 +411,12 @@ public class BossManager : MonoBehaviour
         if (selectedEntry != null)
         {
             return new Vector3(
-                selectedEntry.spawnPosition.x,
-                selectedEntry.spawnPosition.y,
+                selectedEntry.SpawnPosition.x,
+                selectedEntry.SpawnPosition.y,
                 0f);
         }
 
-        return new Vector3(fallbackSpawnX, fallbackSpawnY, 0f);
+        return Vector3.zero;
     }
 
     private WeightedBossEntry GetSelectedEntryForFloor(int floorIndex)

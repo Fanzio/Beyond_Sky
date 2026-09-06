@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class ApplicationBootstrap : MonoBehaviour
 {
+    [Header("Performance")]
     [SerializeField] private int targetFrameRate = 60;
 
     private void Awake()

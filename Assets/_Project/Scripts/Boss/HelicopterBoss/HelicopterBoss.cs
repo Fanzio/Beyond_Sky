@@ -198,19 +198,19 @@ public class HelicopterBoss : BossBase
         if (attackState == HelicopterBossState.FanTelegraph
             || attackState == HelicopterBossState.FanVolleyGap)
         {
-            return FlashBetween(NormalColor, fanWarningColor);
+            return FlashBetween(NormalColor, fanWarningColor, flashSpeed);
         }
 
         if (attackState == HelicopterBossState.MineTelegraph
             || attackState == HelicopterBossState.MineDeploying)
         {
-            return FlashBetween(NormalColor, mineWarningColor);
+            return FlashBetween(NormalColor, mineWarningColor, flashSpeed);
         }
 
         if (attackState == HelicopterBossState.StrafeTracking
             || attackState == HelicopterBossState.StrafeLocked)
         {
-            return FlashBetween(NormalColor, strafeWarningColor);
+            return FlashBetween(NormalColor, strafeWarningColor, flashSpeed);
         }
 
         if (attackState == HelicopterBossState.StrafeDashing)
@@ -302,7 +302,10 @@ public class HelicopterBoss : BossBase
         }
 
         Vector3 muzzlePosition = GetPointPosition(gunMuzzle);
-        Vector2 baseDirection = GetTargetPosition(muzzlePosition) - muzzlePosition;
+        Vector2 baseDirection = GetTargetPosition(
+            muzzlePosition,
+            minAimY,
+            maxAimY) - muzzlePosition;
 
         if (baseDirection.sqrMagnitude < 0.0001f)
         {
@@ -568,33 +571,6 @@ public class HelicopterBoss : BossBase
         }
 
         attackBagIndex = 0;
-    }
-
-    private Vector3 GetPointPosition(Transform point)
-    {
-        if (point != null)
-        {
-            return point.position;
-        }
-
-        return transform.position;
-    }
-
-    private Vector3 GetTargetPosition(Vector3 fallbackOrigin)
-    {
-        if (Target != null)
-        {
-            float targetY = Mathf.Clamp(Target.position.y, minAimY, maxAimY);
-            return new Vector3(Target.position.x, targetY, 0f);
-        }
-
-        return fallbackOrigin + Vector3.left * 20f;
-    }
-
-    private Color FlashBetween(Color from, Color to)
-    {
-        float blend = Mathf.PingPong(Time.time * flashSpeed, 1f);
-        return Color.Lerp(from, to, blend);
     }
 
     private void SetWarningLineVisible(bool isVisible)
