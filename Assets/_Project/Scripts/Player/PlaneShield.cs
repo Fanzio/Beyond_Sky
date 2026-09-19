@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Absorbs one hit and grants brief invulnerability so the same overlapping obstacle
-// cannot immediately hit the plane again.
 public class PlaneShield : MonoBehaviour
 {
     [Header("Visual")]
@@ -41,6 +39,7 @@ public class PlaneShield : MonoBehaviour
     public void GrantShield()
     {
         hasShield = true;
+        AudioSignals.Play(GameSound.ShieldPickup);
         UpdateVisual();
     }
 
@@ -52,6 +51,7 @@ public class PlaneShield : MonoBehaviour
         }
 
         hasShield = false;
+        AudioSignals.Play(GameSound.ShieldBreak);
         invulnerabilityTimer = breakInvulnerabilityTime;
         UpdateVisual();
         return true;

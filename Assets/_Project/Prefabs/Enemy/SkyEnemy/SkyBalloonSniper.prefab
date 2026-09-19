@@ -98,7 +98,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.32012367}
+  m_Offset: {x: 0, y: -0.69020367}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -109,7 +109,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 2.2, y: 6.4622383}
+  m_Size: {x: 2.2, y: 7.2023983}
   m_EdgeRadius: 0
 --- !u!114 &1723932367940262911
 MonoBehaviour:
@@ -138,6 +138,9 @@ MonoBehaviour:
   despawnX: -22
   useFixedY: 0
   fixedY: 10.5
+  randomEntryMinY: 14
+  randomEntryMaxY: 26
+  minimumYDistanceFromPlayer: 4
   machineGunTelegraphDuration: 0.6
   sniperTelegraphDuration: 0.7
   bazookaTelegraphDuration: 0.85
@@ -145,9 +148,9 @@ MonoBehaviour:
   machineGunBulletCount: 8
   machineGunShotInterval: 0.12
   machineGunBulletSpeed: 24
-  sniperShotCount: 3
-  sniperShotInterval: 0.25
-  sniperBulletSpeed: 45
+  sniperShotCount: 2
+  sniperShotInterval: 0.8
+  sniperBulletSpeed: 52
   bazookaMissileCount: 2
   bazookaShotInterval: 0.45
   bazookaMissileSpeed: 18
@@ -224,7 +227,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: b0d3837c319abbd4fa492eab34392af7, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -308,7 +311,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 3
   m_Sprite: {fileID: 21300000, guid: 2f45c14041293284ab94e2385d15fe5c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

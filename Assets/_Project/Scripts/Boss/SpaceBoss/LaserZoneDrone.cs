@@ -31,11 +31,6 @@ public class LaserZoneDrone : MonoBehaviour
     private float activeDuration;
     private float stateTimer;
 
-    public bool IsRunning
-    {
-        get { return gameObject.activeInHierarchy; }
-    }
-
     public void Activate(Vector3 startPosition, Vector3 targetHoldPosition, float duration)
     {
         gameObject.SetActive(true);

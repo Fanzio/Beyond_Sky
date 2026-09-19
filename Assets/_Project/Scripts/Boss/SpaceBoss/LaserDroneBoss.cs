@@ -458,6 +458,11 @@ public class LaserDroneBoss : BossBase
 
     private void ChangeAttackState(LaserDroneBossState nextState)
     {
+        if (nextState == LaserDroneBossState.ZoneTelegraph)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         attackState = nextState;
         stateTimer = 0f;
     }

@@ -19,11 +19,6 @@ public class LaserBeamHazard : MonoBehaviour
     private bool activeColorCached;
     private Color activeColor;
 
-    public bool IsBeamActive
-    {
-        get { return beamActive; }
-    }
-
     public void SetBeamActive(bool isActive)
     {
         if (isActive && beamRenderer == null)
@@ -35,6 +30,7 @@ public class LaserBeamHazard : MonoBehaviour
         }
 
         CacheActiveColor();
+        AudioSignals.SetLaser(this, isActive);
         beamActive = isActive;
         warningVisible = false;
 
@@ -61,6 +57,11 @@ public class LaserBeamHazard : MonoBehaviour
 
         CacheActiveColor();
         bool warningWasVisible = warningVisible;
+        AudioSignals.SetLaser(this, false);
+        if (isVisible && warningWasVisible == false)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
         beamActive = false;
         warningVisible = isVisible;
 
@@ -126,6 +127,7 @@ public class LaserBeamHazard : MonoBehaviour
 
     private void OnDisable()
     {
+        AudioSignals.SetLaser(this, false);
         beamActive = false;
         warningVisible = false;
 

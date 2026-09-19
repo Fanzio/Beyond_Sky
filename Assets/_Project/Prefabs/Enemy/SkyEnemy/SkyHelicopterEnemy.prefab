@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8491051330482198869}
   - component: {fileID: 3265974277331359215}
+  - component: {fileID: 9154195474898499296}
   m_Layer: 7
   m_Name: HelicopterVisual
   m_TagString: Untagged
@@ -72,8 +73,8 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 9c6133468a47e39429459bdc89718020, type: 3}
+  m_SortingOrder: 3
+  m_Sprite: {fileID: 21300000, guid: 74dac6a07f6e92e4b9fd81ae1a30a75f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -84,6 +85,26 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &9154195474898499296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 146264239529527223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0274148c425f42c5aa7238abfbf46d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetRenderer: {fileID: 3265974277331359215}
+  originalSprite: {fileID: 21300000, guid: 9c6133468a47e39429459bdc89718020, type: 3}
+  frames:
+  - {fileID: 21300000, guid: 74dac6a07f6e92e4b9fd81ae1a30a75f, type: 3}
+  - {fileID: 21300000, guid: 446d8c01d1ac9424abdfdf6c9298b870, type: 3}
+  - {fileID: 21300000, guid: 4a96c7fe6b84f1743bf20ad3e2aef45a, type: 3}
+  - {fileID: 21300000, guid: 2ea091f47f45d834caee33897704ff6c, type: 3}
+  framesPerSecond: 18
 --- !u!1 &4046039205350261043
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,7 +310,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -1.9805858, y: -0.32386935}
+  m_Offset: {x: -1.9805858, y: -0.81100464}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -300,7 +321,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 4.9611716, y: 3.441477}
+  m_Size: {x: 4.9611716, y: 6.689043}
   m_EdgeRadius: 0
 --- !u!114 &3751233662114106892
 MonoBehaviour:
@@ -328,18 +349,22 @@ MonoBehaviour:
   leaveSpeed: 28
   leaveX: 30
   postAttackDuration: 0.35
+  randomEntryMinY: 14
+  randomEntryMaxY: 28
+  minimumYDistanceFromPlayer: 4
   minAimY: 12
   maxAimY: 28
   fanTelegraphDuration: 0.7
   fanVolleyCount: 2
   fanBulletsPerVolley: 5
   fanAngleSpacing: 12
-  fanBulletSpeed: 22
+  fanBulletSpeed: 20
   fanVolleyGap: 0.55
   mineTelegraphDuration: 0.7
   mineCount: 2
   mineDeployInterval: 0.15
   mineTravelDuration: 0.55
+  mineArmedDuration: 0.5
   mineFieldX: 0
   mineMinY: 12
   mineMaxY: 28

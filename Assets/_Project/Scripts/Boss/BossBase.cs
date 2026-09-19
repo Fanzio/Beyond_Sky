@@ -7,16 +7,11 @@ public enum BossLifeState
     Fighting,
     Defeated
 }
-
-// Shared lifecycle for every floor boss.
-// It owns entry, the current timer-based health system, hit feedback and defeat.
 public abstract class BossBase : MonoBehaviour
 {
-    [Header("Visual")]
+    [Header("Warning visual")]
     [SerializeField] private SpriteRenderer bodyRenderer;
     [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color hitColor = Color.white;
-    [SerializeField] private float hitFlashTime = 0.12f;
 
     [Header("Fight length")]
     [SerializeField] private float totalTime = 24f;
@@ -36,7 +31,6 @@ public abstract class BossBase : MonoBehaviour
     private BulletPool normalBulletPool;
     private float lifeStateTimer;
     private float timeRemaining;
-    private float hitFlashTimer;
     private bool isFinished;
 
     public bool IsFinished
@@ -52,16 +46,6 @@ public abstract class BossBase : MonoBehaviour
     public bool IsDefeated
     {
         get { return lifeState == BossLifeState.Defeated; }
-    }
-
-    public float TimeRemaining
-    {
-        get { return timeRemaining; }
-    }
-
-    public float TotalTime
-    {
-        get { return totalTime; }
     }
 
     public float NormalizedTime
@@ -101,7 +85,6 @@ public abstract class BossBase : MonoBehaviour
         transform.rotation = Quaternion.identity;
 
         timeRemaining = totalTime;
-        hitFlashTimer = 0f;
         isFinished = false;
         lifeStateTimer = 0f;
         lifeState = BossLifeState.Enter;
@@ -119,7 +102,7 @@ public abstract class BossBase : MonoBehaviour
         }
 
         timeRemaining = timeRemaining - timeLostPerBullet;
-        hitFlashTimer = hitFlashTime;
+        AudioSignals.Play(GameSound.BossHit);
 
         if (timeRemaining > 0f)
         {
@@ -137,7 +120,7 @@ public abstract class BossBase : MonoBehaviour
         if (lifeState == BossLifeState.Enter)
         {
             UpdateEntry(deltaTime);
-            UpdateVisual(deltaTime);
+            UpdateVisual();
             return;
         }
 
@@ -160,7 +143,7 @@ public abstract class BossBase : MonoBehaviour
         }
 
         TickFight(deltaTime);
-        UpdateVisual(deltaTime);
+        UpdateVisual();
     }
 
     protected virtual void OnSetupComplete()
@@ -338,6 +321,7 @@ public abstract class BossBase : MonoBehaviour
 
         timeRemaining = 0f;
         lifeState = BossLifeState.Defeated;
+        AudioSignals.Play(GameSound.BossDefeated);
         lifeStateTimer = 0f;
         ApplyBodyColor(normalColor);
         OnDefeatStarted();
@@ -357,15 +341,8 @@ public abstract class BossBase : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private void UpdateVisual(float deltaTime)
+    private void UpdateVisual()
     {
-        if (hitFlashTimer > 0f)
-        {
-            hitFlashTimer = hitFlashTimer - deltaTime;
-            ApplyBodyColor(hitColor);
-            return;
-        }
-
         ApplyBodyColor(GetFightColor());
     }
 

@@ -21,7 +21,6 @@ public enum StandardHelicopterState
     Leaving
 }
 
-// Enters, randomly chooses one complete HelicopterBoss ability and leaves.
 public class SingleAttackHelicopterEnemy : EnemyBase
 {
     [Header("Visual")]
@@ -66,6 +65,8 @@ public class SingleAttackHelicopterEnemy : EnemyBase
     [SerializeField] private int mineCount = 2;
     [SerializeField] private float mineDeployInterval = 0.15f;
     [SerializeField] private float mineTravelDuration = 0.55f;
+    [Min(0.05f)]
+    [SerializeField] private float mineArmedDuration = 0.65f;
     [SerializeField] private float mineFieldX = 0f;
     [SerializeField] private float mineMinY = 12f;
     [SerializeField] private float mineMaxY = 28f;
@@ -122,6 +123,7 @@ public class SingleAttackHelicopterEnemy : EnemyBase
 
     public override void TakeBulletHit()
     {
+        AudioSignals.Play(GameSound.EnemyDestroyed);
         DeactivateEnemy();
     }
 
@@ -288,6 +290,7 @@ public class SingleAttackHelicopterEnemy : EnemyBase
             Quaternion rotation = Quaternion.Euler(0f, 0f, angle);
             Vector2 direction = rotation * baseDirection;
             bullet.Launch(muzzlePosition, direction, fanBulletSpeed);
+            AudioSignals.Play(GameSound.EnemyShot);
         }
     }
 
@@ -344,7 +347,8 @@ public class SingleAttackHelicopterEnemy : EnemyBase
                 mine.Deploy(
                     GetPointPosition(mineDropPoint),
                     destination,
-                    mineTravelDuration);
+                    mineTravelDuration,
+                    mineArmedDuration);
             }
         }
         else
@@ -521,6 +525,13 @@ public class SingleAttackHelicopterEnemy : EnemyBase
 
     private void ChangeState(StandardHelicopterState nextState)
     {
+        if (nextState == StandardHelicopterState.FanTelegraph ||
+            nextState == StandardHelicopterState.MineTelegraph ||
+            nextState == StandardHelicopterState.StrafeLocked)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         state = nextState;
         stateTimer = 0f;
     }

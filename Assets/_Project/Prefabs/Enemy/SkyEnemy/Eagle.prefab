@@ -66,7 +66,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.10743201, y: -0.42340887}
+  m_Offset: {x: 0.10743201, y: -0.35289353}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -77,7 +77,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 2.1248775, y: 0.60818875}
+  m_Size: {x: 2.1248775, y: 0.7492194}
   m_EdgeRadius: 0
 --- !u!114 &6836253797974158754
 MonoBehaviour:
@@ -121,6 +121,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6869246688795854338}
   - component: {fileID: 2748736351778422096}
+  - component: {fileID: 8509794639702683953}
   m_Layer: 6
   m_Name: Visual
   m_TagString: Untagged
@@ -183,8 +184,8 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
-  m_Sprite: {fileID: 21300000, guid: 706559e13376b0440a024d5eca74c0fc, type: 3}
+  m_SortingOrder: 3
+  m_Sprite: {fileID: 21300000, guid: 7804e2de3c3a0104c824a363f6bbebc2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -195,3 +196,26 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &8509794639702683953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4644275053367339793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0274148c425f42c5aa7238abfbf46d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetRenderer: {fileID: 2748736351778422096}
+  originalSprite: {fileID: 21300000, guid: 706559e13376b0440a024d5eca74c0fc, type: 3}
+  frames:
+  - {fileID: 21300000, guid: 7804e2de3c3a0104c824a363f6bbebc2, type: 3}
+  - {fileID: 21300000, guid: 8a6c4c309717a1647925388119cf9509, type: 3}
+  - {fileID: 21300000, guid: a3f5ce4663fcf784eafe67fa7f7dc6bf, type: 3}
+  - {fileID: 21300000, guid: 83139602150812345b31bb23b7c4ab16, type: 3}
+  - {fileID: 21300000, guid: a3f5ce4663fcf784eafe67fa7f7dc6bf, type: 3}
+  - {fileID: 21300000, guid: 8a6c4c309717a1647925388119cf9509, type: 3}
+  framesPerSecond: 7.5
+  randomStart: 1

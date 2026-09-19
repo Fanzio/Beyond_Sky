@@ -8,9 +8,6 @@ public enum LaserState
     Fire,
     Leave
 }
-
-// Stops tracking before charging so the warning gives the player a fair escape window.
-// Its separate beam child uses the normal obstacle collision path.
 public class LaserEnemy : EnemyBase
 {
     [Header("Visual")]
@@ -55,6 +52,7 @@ public class LaserEnemy : EnemyBase
 
     public override void TakeBulletHit()
     {
+        AudioSignals.Play(GameSound.EnemyDestroyed);
         SetBeamActive(false);
         DeactivateEnemy();
     }
@@ -94,7 +92,7 @@ public class LaserEnemy : EnemyBase
         }
         if (state == LaserState.Fire)
         {
-            UpdateFire(deltaTime);
+            UpdateFire();
             return;
         }
         UpdateLeave(deltaTime);
@@ -136,7 +134,7 @@ public class LaserEnemy : EnemyBase
         ChangeState(LaserState.Fire);
     }
 
-    private void UpdateFire(float deltaTime)
+    private void UpdateFire()
     {
         GrowBeam();
 
@@ -181,10 +179,16 @@ public class LaserEnemy : EnemyBase
             return;
         }
         beamObject.SetActive(active);
+        AudioSignals.SetLaser(this, active);
     }
 
     private void ChangeState(LaserState nextState)
     {
+        if (nextState == LaserState.Charge)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         state = nextState;
         stateTimer = 0f;
     }

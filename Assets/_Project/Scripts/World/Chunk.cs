@@ -1,11 +1,8 @@
 using UnityEngine;
 
-// Defines one reusable world section. Awake records the contents and their starting
-// positions so OnEnable can restore the entire chunk every time it returns to the pool.
 public class Chunk : MonoBehaviour
 {
     [Header("Spawn rules")]
-    [SerializeField] private float minDistance;
     [SerializeField] private int bandIndex = -1;
     [SerializeField] private bool isArena;
 
@@ -13,11 +10,6 @@ public class Chunk : MonoBehaviour
     private Obstacle[] obstacles;
     private MovingObstacle[] movingObstacles;
     private VerticalObstacle[] verticalObstacles;
-
-    public float MinDistance
-    {
-        get { return minDistance; }
-    }
 
     public int BandIndex
     {

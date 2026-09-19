@@ -19,9 +19,6 @@ public enum BossState
     Recover
 }
 
-// City boss: a larger EnemyPlane with three attacks.
-// The first attack is guaranteed at the beginning. Later attacks come from a shuffled
-// bag containing three bursts, one heavy shot and one summon by default.
 public class PlaneBoss : BossBase
 {
     [Header("Visual warnings")]
@@ -397,6 +394,8 @@ public class PlaneBoss : BossBase
         }
 
         bullet.Launch(GetPointPosition(muzzle), Vector2.left, speed);
+
+        AudioSignals.Play(GameSound.EnemyShot);
     }
 
     private void StartSummonSequence()
@@ -413,6 +412,13 @@ public class PlaneBoss : BossBase
 
     private void ChangeCityState(BossState nextState)
     {
+        if (nextState == BossState.BurstTelegraph ||
+            nextState == BossState.HeavyTelegraph ||
+            nextState == BossState.SummonTelegraph)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         attackState = nextState;
         stateTimer = 0f;
     }

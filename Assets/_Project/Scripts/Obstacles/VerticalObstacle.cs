@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Moves an obstacle vertically inside its chunk. The chunk restores its starting position
-// when recycled, while the Range protects reaction time inside the flight band.
 public class VerticalObstacle : MonoBehaviour
 {
     [Header("Vertical drift - positive rises")]

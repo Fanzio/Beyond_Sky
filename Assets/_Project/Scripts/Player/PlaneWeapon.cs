@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Manages limited ammunition and obtains every projectile from the shared bullet pool.
 public class PlaneWeapon : MonoBehaviour
 {
     [Header("References")]
@@ -27,6 +26,10 @@ public class PlaneWeapon : MonoBehaviour
     public void AddAmmo(int amount)
     {
         ammo = ammo + amount;
+        if (amount > 0)
+        {
+            AudioSignals.Play(GameSound.AmmoPickup);
+        }
     }
 
     private void Awake()
@@ -82,6 +85,7 @@ public class PlaneWeapon : MonoBehaviour
         }
 
         bullet.Launch(muzzle.position, Vector2.right, bulletSpeed);
+        AudioSignals.Play(GameSound.PlayerShot);
         ammo = ammo - 1;
         cooldownTimer = fireCooldown;
     }

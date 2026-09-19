@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Uses overlap detection because pickups move with recycled chunks and do not need their
-// own Rigidbody2D.
 public class PickupCollector : MonoBehaviour
 {
     [Header("References")]

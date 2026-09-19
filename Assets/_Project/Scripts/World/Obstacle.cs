@@ -5,13 +5,12 @@ public class Obstacle : MonoBehaviour
 {
     private bool isDestroyed;
 
-    public bool IsDestroyed
-    {
-        get { return isDestroyed; }
-    }
-
     public void DestroyObstacle()
     {
+        if (isDestroyed == false)
+        {
+            AudioSignals.Play(GameSound.ObstacleDestroyed);
+        }
         isDestroyed = true;
         gameObject.SetActive(false);
     }

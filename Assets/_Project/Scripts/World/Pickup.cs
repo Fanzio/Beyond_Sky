@@ -7,7 +7,6 @@ public enum PickupType
     Ammo
 }
 
-// Hides collected pickups so their chunk can restore and reuse them later.
 public class Pickup : MonoBehaviour
 {
     [Header("Type")]

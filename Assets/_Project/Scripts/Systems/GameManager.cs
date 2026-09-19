@@ -1,9 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
-// Owns the run state. Game over freezes scaled gameplay while unscaled restart input
-// remains available. Reloading the scene guarantees that every system starts clean.
 public class GameManager : MonoBehaviour
 {
     [Header("References")]
@@ -57,48 +53,9 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0f;
     }
 
-    public void Restart()
-    {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
     private void Awake()
     {
         Time.timeScale = 1f;
     }
 
-    private void Update()
-    {
-        if (CanRestart == false)
-        {
-            return;
-        }
-
-        if (WasRestartInputPressed())
-        {
-            Restart();
-        }
-    }
-
-    private bool WasRestartInputPressed()
-    {
-        if (Touchscreen.current != null)
-        {
-            if (Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
-            {
-                return true;
-            }
-        }
-
-        if (Mouse.current != null)
-        {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

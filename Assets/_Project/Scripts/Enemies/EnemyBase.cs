@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Keeps shared references and movement helpers in one place for every pooled enemy.
 public abstract class EnemyBase : MonoBehaviour
 {
     private Transform target;

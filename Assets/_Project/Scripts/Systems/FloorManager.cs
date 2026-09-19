@@ -7,11 +7,6 @@ public class Floor
     [SerializeField] private int coinMultiplier = 1;
     [SerializeField] private Color backgroundColor = new Color(0.18f, 0.36f, 0.54f);
 
-    public string FloorName
-    {
-        get { return floorName; }
-    }
-
     public int CoinMultiplier
     {
         get { return coinMultiplier; }
@@ -29,9 +24,6 @@ public class Floor
         backgroundColor = color;
     }
 }
-
-// Advances floors only after a boss defeat and restarts the floor-distance counter so
-// every floor requires the same configured travel before its next boss.
 public class FloorManager : MonoBehaviour
 {
     [Header("References")]
@@ -42,7 +34,6 @@ public class FloorManager : MonoBehaviour
     [SerializeField] private float distanceToBoss = 500f;
 
     [Header("Display")]
-    [SerializeField] private float metresPerUnit = 0.8f;
     [SerializeField] private float colourBlendSpeed = 0.7f;
 
     [Header("Floors - lowest first")]
@@ -54,19 +45,12 @@ public class FloorManager : MonoBehaviour
         new Floor("Spazio", 5, new Color(0.04f, 0.03f, 0.12f))
     };
 
-    public event System.Action<int> FloorAdvanced;
-
     private int currentFloorIndex;
     private float floorStartDistance;
 
     public int CurrentFloorIndex
     {
         get { return currentFloorIndex; }
-    }
-
-    public string CurrentFloorName
-    {
-        get { return floors[currentFloorIndex].FloorName; }
     }
 
     public int CoinMultiplier
@@ -94,11 +78,6 @@ public class FloorManager : MonoBehaviour
         get { return currentFloorIndex >= floors.Length - 1; }
     }
 
-    public float DisplayedAltitude
-    {
-        get { return worldScroller.DistanceTravelled * metresPerUnit; }
-    }
-
     public void NotifyBossDefeated()
     {
         ResetFloorDistance();
@@ -109,11 +88,6 @@ public class FloorManager : MonoBehaviour
         }
 
         currentFloorIndex = currentFloorIndex + 1;
-
-        if (FloorAdvanced != null)
-        {
-            FloorAdvanced.Invoke(currentFloorIndex);
-        }
     }
 
     public void ResetFloorDistance()

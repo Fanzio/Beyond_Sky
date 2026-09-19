@@ -350,6 +350,8 @@ public class GunnerDroneBoss : BossBase
         }
 
         bullet.Launch(position, Vector2.left, speed);
+
+        AudioSignals.Play(GameSound.EnemyShot);
     }
 
     private void UpdateReinforcementTelegraph()
@@ -467,6 +469,13 @@ public class GunnerDroneBoss : BossBase
 
     private void ChangeAttackState(GunnerDroneState nextState)
     {
+        if (nextState == GunnerDroneState.BurstTelegraph ||
+            nextState == GunnerDroneState.HeavyTelegraph ||
+            nextState == GunnerDroneState.ReinforcementTelegraph)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         attackState = nextState;
         stateTimer = 0f;
     }

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Creates every bullet before gameplay so firing never allocates new objects.
 public class BulletPool : MonoBehaviour
 {
     [Header("Pool")]

@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// A bullet moves in a straight line and dies on contact or after its lifetime.
-// BossBase lets the same projectile hit every current and future boss type.
 public class Bullet : MonoBehaviour
 {
     [Header("Collision")]

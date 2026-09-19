@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3569810366414890034}
   - component: {fileID: 1878674077979485890}
   - component: {fileID: 3440823104778795164}
+  - component: {fileID: 2368985137101880879}
   m_Layer: 7
   m_Name: Seagull
   m_TagString: Untagged
@@ -76,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
-  m_Sprite: {fileID: 21300000, guid: ddaf453674f4bad4881a0a7420df18af, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 225dc857b55608b45b9856d14ced56af, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -122,8 +123,8 @@ BoxCollider2D:
   m_Offset: {x: 0.29523355, y: 1.2278123}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0}
-    oldSize: {x: 4.5133333, y: 2.46}
+    pivot: {x: 0.4815949, y: 0.012886759}
+    oldSize: {x: 3.0735295, y: 3.0735295}
     newSize: {x: 5.641667, y: 3.075}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -157,3 +158,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   horizontalSpeed: -5
+--- !u!114 &2368985137101880879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2644810257419422980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0274148c425f42c5aa7238abfbf46d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetRenderer: {fileID: 2241136356232314926}
+  originalSprite: {fileID: 21300000, guid: ddaf453674f4bad4881a0a7420df18af, type: 3}
+  frames:
+  - {fileID: 21300000, guid: 225dc857b55608b45b9856d14ced56af, type: 3}
+  - {fileID: 21300000, guid: 5ba9dd22074e4f441891e7167101b010, type: 3}
+  - {fileID: 21300000, guid: 23213cb6fb4fb414f8a73af76d65bb2f, type: 3}
+  - {fileID: 21300000, guid: 954ee4f8f2734a74c9ec672d66563f5a, type: 3}
+  - {fileID: 21300000, guid: 23213cb6fb4fb414f8a73af76d65bb2f, type: 3}
+  - {fileID: 21300000, guid: 5ba9dd22074e4f441891e7167101b010, type: 3}
+  framesPerSecond: 9
+  randomStart: 1

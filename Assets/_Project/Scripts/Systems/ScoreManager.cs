@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Score follows distance while the floor multiplier applies only to collected coins.
 public class ScoreManager : MonoBehaviour
 {
     private const string BestScoreKey = "BestScore";
@@ -40,6 +39,7 @@ public class ScoreManager : MonoBehaviour
     public void AddCoin(int amount)
     {
         runCoins = runCoins + amount * floorManager.CoinMultiplier;
+        AudioSignals.Play(GameSound.Coin);
     }
 
     public void SaveCoins()
@@ -58,13 +58,6 @@ public class ScoreManager : MonoBehaviour
         PlayerPrefs.SetInt(BestScoreKey, Score);
         PlayerPrefs.Save();
         return true;
-    }
-
-    public void ResetScore()
-    {
-        score = 0f;
-        runCoins = 0;
-        lastDistance = worldScroller.DistanceTravelled;
     }
 
     private void Update()

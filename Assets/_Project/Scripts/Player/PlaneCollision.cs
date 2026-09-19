@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Uses a swept cast because fast obstacles can cross the plane between two frames.
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlaneCollision : MonoBehaviour
 {

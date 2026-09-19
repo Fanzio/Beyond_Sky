@@ -7,7 +7,6 @@ public enum AerialMineState
     Exploding
 }
 
-// Pooled mine that moves into position, warns the player and leaves a damaging blast.
 public class AerialMine : MonoBehaviour
 {
     [Header("Visuals")]
@@ -30,6 +29,7 @@ public class AerialMine : MonoBehaviour
     private Vector3 travelStart;
     private Vector3 travelDestination;
     private float travelDuration;
+    private float currentArmedDuration;
     private float stateTimer;
     private SpeedManager speedManager;
 
@@ -40,6 +40,12 @@ public class AerialMine : MonoBehaviour
 
     public void Deploy(Vector3 startPosition, Vector3 destination, float duration)
     {
+        Deploy(startPosition, destination, duration, armedDuration);
+    }
+
+    public void Deploy(Vector3 startPosition, Vector3 destination, float duration, float fuseDuration)
+    {
+        currentArmedDuration = Mathf.Max(0.05f, fuseDuration);
         transform.position = startPosition;
         transform.rotation = Quaternion.identity;
 
@@ -112,7 +118,7 @@ public class AerialMine : MonoBehaviour
             return;
         }
 
-        if (stateTimer < armedDuration)
+        if (stateTimer < currentArmedDuration)
         {
             return;
         }
@@ -133,6 +139,7 @@ public class AerialMine : MonoBehaviour
     private void BeginExplosion()
     {
         state = AerialMineState.Exploding;
+        AudioSignals.Play(GameSound.Explosion);
         stateTimer = 0f;
         SetMineColor(normalColor);
         SetVisuals(false, true);

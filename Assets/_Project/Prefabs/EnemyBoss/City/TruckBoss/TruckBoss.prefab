@@ -358,7 +358,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: 857eac0262bdf0744a4c55306fa6f72c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -387,7 +387,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2783747728704922801
 Transform:
   m_ObjectHideFlags: 0
@@ -396,7 +396,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5853278805765647490}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -421,9 +421,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bodyRenderer: {fileID: 8381269317443389106}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hitColor: {r: 0.38679248, g: 0.129539, b: 0.129539, a: 1}
-  hitFlashTime: 0.12
-  totalTime: 24
+  totalTime: 33
   timeLostPerBullet: 3
   enterSpeed: 22
   holdX: 12
@@ -443,24 +441,21 @@ MonoBehaviour:
   sniperMuzzle: {fileID: 2597774331909776357}
   bazookaMuzzle: {fileID: 5339597130848067347}
   attackBag: 0000000000000000010000000200000003000000
-  minAimY: 12
-  maxAimY: 28
   machineGunTelegraphDuration: 0.65
   machineGunBulletCount: 8
   machineGunShotInterval: 0.12
   machineGunBulletSpeed: 24
-  machineGunAimSpeed: 6
   sniperShotCount: 3
   sniperTelegraphDuration: 0.45
-  sniperShotInterval: 0.25
-  sniperBulletSpeed: 45
+  sniperShotInterval: 0.8
+  sniperBulletSpeed: 53
   missilePool: {fileID: 0}
   bazookaMissileCount: 2
   bazookaTelegraphDuration: 0.8
-  bazookaShotInterval: 0.45
-  bazookaMissileSpeed: 18
+  bazookaShotInterval: 0.7
+  bazookaMissileSpeed: 25
   enemySpawner: {fileID: 0}
-  enemyPlanePrefab: {fileID: 4886782355545905879, guid: 26bc7ecf277ac6b4c8fa85082a52aa01, type: 3}
+  enemyPlanePrefab: {fileID: 4886782355545905879, guid: 858f2dc72d162ba4396be0eee61b7971, type: 3}
   summonCount: 4
   summonTelegraphDuration: 0.7
   summonInterval: 0.35

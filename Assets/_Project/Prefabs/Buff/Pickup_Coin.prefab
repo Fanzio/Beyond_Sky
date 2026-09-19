@@ -74,8 +74,8 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  m_SortingOrder: 4
+  m_Sprite: {fileID: 21300000, guid: 800e2c99c35d7504a9be6132228687e0, type: 3}
   m_Color: {r: 1, g: 0.9424448, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -134,5 +134,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  amount: 1
   spriteRenderer: {fileID: 2779275089289479472}
   pickupCollider: {fileID: 3139294918107377852}

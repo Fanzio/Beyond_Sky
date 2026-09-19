@@ -51,6 +51,7 @@ public class ExplosiveMissile : MonoBehaviour
         PointAlong(direction);
         SetVisuals(true, false);
         gameObject.SetActive(true);
+        AudioSignals.Play(GameSound.EnemyShot);
     }
 
     public void Despawn()
@@ -121,6 +122,7 @@ public class ExplosiveMissile : MonoBehaviour
     {
         transform.position = new Vector3(explosionPosition.x, explosionPosition.y, 0f);
         state = ExplosiveMissileState.Exploding;
+        AudioSignals.Play(GameSound.Explosion);
         stateTimer = 0f;
         SetVisuals(false, true);
         DealExplosionDamage();

@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Controls the global scrolling speed with an asymptotic increase that approaches the
-// configured maximum without making long runs unplayable.
 public class SpeedManager : MonoBehaviour
 {
     [Header("Ramp")]
@@ -19,11 +17,6 @@ public class SpeedManager : MonoBehaviour
     public float NormalizedSpeed
     {
         get { return Mathf.InverseLerp(startSpeed, maxSpeed, currentSpeed); }
-    }
-
-    public void ResetSpeed()
-    {
-        currentSpeed = startSpeed;
     }
 
     private void Awake()

@@ -1,28 +1,35 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
-
-// Separates steering and firing so both actions can be used together during combat.
-// The first steering tap is immediate; a second tap in the same zone triggers the dodge.
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using System.Collections.Generic;
 public class PlaneInput : MonoBehaviour
 {
+
     [Header("Zones")]
     [SerializeField] private float steeringWidthFraction = 0.58f;
     [SerializeField] private float verticalSplitFraction = 0.5f;
 
     [Header("Double tap")]
     [SerializeField] private float doubleTapWindow = 0.28f;
-
     private float verticalInput;
     private float lastTapTime = -10f;
     private float lastTapZone;
     private float pendingDoubleTap;
     private bool pendingFire;
     private bool isLocked;
-
+    private List<RaycastResult> uiHits = new List<RaycastResult>(16);
+    private List<int> uiTouches = new List<int>(10);
+    private bool uiMouse;
+    private PointerEventData pointer;
+    private EventSystem pointerSystem;
     public float VerticalInput
     {
-        get { return verticalInput; }
+        get
+        {
+            return verticalInput;
+        }
     }
 
     public float ConsumeDoubleTap()
@@ -41,14 +48,15 @@ public class PlaneInput : MonoBehaviour
 
     private void Update()
     {
-        if (isLocked)
+        TrackUIContacts();
+        if (isLocked || Time.timeScale == 0f)
         {
             verticalInput = 0f;
             pendingFire = false;
             pendingDoubleTap = 0f;
+            lastTapTime = -10f;
             return;
         }
-
         verticalInput = ReadHeldSteering();
         ReadPresses();
     }
@@ -61,7 +69,6 @@ public class PlaneInput : MonoBehaviour
     private float ReadHeldSteering()
     {
         float value = 0f;
-
         if (Touchscreen.current != null)
         {
             foreach (TouchControl touch in Touchscreen.current.touches)
@@ -70,12 +77,16 @@ public class PlaneInput : MonoBehaviour
                 {
                     continue;
                 }
+                if (uiTouches.Contains(touch.touchId.ReadValue()))
+                {
+                    continue;
+                }
                 value = value + SteeringValue(touch.position.ReadValue());
             }
         }
         if (Mouse.current != null)
         {
-            if (Mouse.current.leftButton.isPressed)
+            if (Mouse.current.leftButton.isPressed && !uiMouse)
             {
                 value = value + SteeringValue(Mouse.current.position.ReadValue());
             }
@@ -93,12 +104,16 @@ public class PlaneInput : MonoBehaviour
                 {
                     continue;
                 }
+                if (uiTouches.Contains(touch.touchId.ReadValue()))
+                {
+                    continue;
+                }
                 RegisterPress(touch.position.ReadValue());
             }
         }
         if (Mouse.current != null)
         {
-            if (Mouse.current.leftButton.wasPressedThisFrame)
+            if (Mouse.current.leftButton.wasPressedThisFrame && !uiMouse)
             {
                 RegisterPress(Mouse.current.position.ReadValue());
             }
@@ -112,11 +127,9 @@ public class PlaneInput : MonoBehaviour
             pendingFire = true;
             return;
         }
-
         float zone = SteeringValue(position);
         bool inTime = Time.unscaledTime - lastTapTime <= doubleTapWindow;
         bool sameZone = Mathf.Approximately(zone, lastTapZone);
-
         if (inTime && sameZone)
         {
             pendingDoubleTap = zone;
@@ -130,6 +143,115 @@ public class PlaneInput : MonoBehaviour
     private bool IsInSteeringArea(float screenX)
     {
         return screenX < Screen.width * steeringWidthFraction;
+    }
+
+    private void TrackUIContacts()
+    {
+        RemoveReleasedUIContacts();
+        TrackUITouches();
+        TrackUIMouse();
+    }
+
+    private void RemoveReleasedUIContacts()
+    {
+        for (int i = uiTouches.Count - 1; i >= 0; i--)
+        {
+            if (IsTouchHeld(uiTouches[i]) == false)
+            {
+                uiTouches.RemoveAt(i);
+            }
+        }
+    }
+
+    private bool IsTouchHeld(int touchId)
+    {
+        if (Touchscreen.current == null)
+        {
+            return false;
+        }
+        foreach (TouchControl touch in Touchscreen.current.touches)
+        {
+            if (touch.press.isPressed && touch.touchId.ReadValue() == touchId)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void TrackUITouches()
+    {
+        if (Touchscreen.current == null)
+        {
+            return;
+        }
+        foreach (TouchControl touch in Touchscreen.current.touches)
+        {
+            if (touch.press.isPressed == false && touch.press.wasPressedThisFrame == false)
+            {
+                continue;
+            }
+            int touchId = touch.touchId.ReadValue();
+            if (uiTouches.Contains(touchId))
+            {
+                continue;
+            }
+            if (Time.timeScale == 0f || IsOverUI(touch.position.ReadValue()))
+            {
+                uiTouches.Add(touchId);
+            }
+        }
+    }
+
+    private void TrackUIMouse()
+    {
+        if (Mouse.current == null)
+        {
+            uiMouse = false;
+            return;
+        }
+        if (Mouse.current.leftButton.isPressed == false &&
+            Mouse.current.leftButton.wasPressedThisFrame == false)
+        {
+            uiMouse = false;
+            return;
+        }
+        if (uiMouse)
+        {
+            return;
+        }
+        if (Time.timeScale == 0f || IsOverUI(Mouse.current.position.ReadValue()))
+        {
+            uiMouse = true;
+        }
+    }
+
+    private bool IsOverUI(Vector2 position)
+    {
+        uiHits.Clear();
+        EventSystem currentSystem = EventSystem.current;
+        if (currentSystem == null)
+        {
+            pointerSystem = null;
+            pointer = null;
+            return false;
+        }
+        if (pointer == null || pointerSystem != currentSystem)
+        {
+            pointerSystem = currentSystem;
+            pointer = new PointerEventData(pointerSystem);
+        }
+        pointer.Reset();
+        pointer.position = position;
+        pointerSystem.RaycastAll(pointer, uiHits);
+        for (int i = 0; i < uiHits.Count; i++)
+        {
+            if (uiHits[i].module is GraphicRaycaster)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private float SteeringValue(Vector2 position)

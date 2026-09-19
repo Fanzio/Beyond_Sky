@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Counts distance without moving the player on X and recycles prebuilt chunks to avoid
-// precision loss and allocations during gameplay. Arena chunks deliberately ignore floors.
 public class WorldScroller : MonoBehaviour
 {
     [Header("References")]
@@ -13,30 +11,40 @@ public class WorldScroller : MonoBehaviour
     [Header("Chunks")]
     [SerializeField] private Chunk openingChunkPrefab;
     [SerializeField] private Chunk[] chunkPrefabs;
-    [SerializeField] private int copiesPerPrefab = 2;
     [SerializeField] private int activeChunkCount = 3;
     [SerializeField] private float chunkWidth = 40f;
     [SerializeField] private float startX = -30f;
     [SerializeField] private float recycleX = -45f;
+
+    [Header("Clear opening after takeoff")]
+    [Min(0f)]
+    [SerializeField] private float openingClearDuration = 2f;
+    [Min(1f)]
+    [SerializeField] private float openingScreenMargin = 2f;
+
+    private float openingTimer;
+    private bool openingClear = true;
+
+    public bool IsOpeningClear
+    {
+        get { return openingClear; }
+    }
 
     private Chunk openingChunk;
     private List<Chunk> pool = new List<Chunk>();
     private List<Chunk> activeChunks = new List<Chunk>();
     private List<Chunk> candidates = new List<Chunk>();
     private float distanceTravelled;
+    private bool worldPrepared;
 
     public float DistanceTravelled
     {
         get { return distanceTravelled; }
     }
 
-    public void SetStartDistance(float distance)
-    {
-        distanceTravelled = distance;
-    }
-
     public void ClearActiveChunks()
     {
+        openingClear = false;
         for (int i = 0; i < activeChunks.Count; i++)
         {
             activeChunks[i].gameObject.SetActive(false);
@@ -47,14 +55,36 @@ public class WorldScroller : MonoBehaviour
 
     private void Start()
     {
+        PrepareWorld();
+    }
+
+    public void PrepareWorld()
+    {
+        if (worldPrepared)
+        {
+            return;
+        }
+
         BuildPool();
-        FillWorld();
+        openingTimer = Mathf.Max(0f, openingClearDuration);
+        worldPrepared = true;
     }
 
     private void Update()
     {
         float distanceThisFrame = speedManager.CurrentSpeed * Time.deltaTime;
         distanceTravelled = distanceTravelled + distanceThisFrame;
+
+        if (openingClear)
+        {
+            openingTimer = openingTimer - Time.deltaTime;
+            if (openingTimer <= 0f)
+            {
+                FillOpeningOffscreen();
+                openingClear = false;
+            }
+            return;
+        }
 
         MoveChunks(distanceThisFrame);
         RecycleIfNeeded();
@@ -72,7 +102,7 @@ public class WorldScroller : MonoBehaviour
 
         for (int i = 0; i < chunkPrefabs.Length; i++)
         {
-            int copies = copiesPerPrefab;
+            int copies = 1;
 
             if (chunkPrefabs[i].IsArena)
             {
@@ -89,8 +119,7 @@ public class WorldScroller : MonoBehaviour
         }
         if (arenaCount == 0)
         {
-            Debug.LogWarning("WorldScroller: nessun chunk con Is Arena. "
-                + "Durante il boss il mondo restera' vuoto.", this);
+            Debug.LogWarning("WorldScroller: nessun chunk con Is Arena. " + "Durante il boss il mondo restera' vuoto.", this);
         }
         if (pool.Count <= activeChunkCount)
         {
@@ -114,6 +143,44 @@ public class WorldScroller : MonoBehaviour
         {
             TrySpawnAt(spawnX);
             spawnX = spawnX + chunkWidth;
+        }
+    }
+
+    private void FillOpeningOffscreen()
+    {
+        Camera camera = Camera.main;
+        if (camera == null)
+        {
+            Debug.LogError("WorldScroller: Main Camera mancante per l'ingresso dei chunk.", this);
+            return;
+        }
+
+        FillWorld();
+        float rightEdge = camera.ViewportToWorldPoint(new Vector3(1f, 0.5f, Mathf.Abs(camera.transform.position.z))).x;
+        float leftEdge = float.MaxValue;
+        for (int i = 0; i < activeChunks.Count; i++)
+        {
+            Chunk chunk = activeChunks[i];
+            leftEdge = Mathf.Min(leftEdge, chunk.transform.position.x - chunkWidth * 0.5f);
+            SpriteRenderer[] sprites = chunk.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int j = 0; j < sprites.Length; j++)
+            {
+                leftEdge = Mathf.Min(leftEdge, sprites[j].bounds.min.x);
+            }
+            Collider2D[] colliders = chunk.GetComponentsInChildren<Collider2D>();
+            for (int j = 0; j < colliders.Length; j++)
+            {
+                if (colliders[j].enabled)
+                {
+                    leftEdge = Mathf.Min(leftEdge, colliders[j].bounds.min.x);
+                }
+            }
+        }
+
+        float shift = Mathf.Max(0f, rightEdge + openingScreenMargin - leftEdge);
+        for (int i = 0; i < activeChunks.Count; i++)
+        {
+            activeChunks[i].transform.position += Vector3.right * shift;
         }
     }
 
@@ -189,12 +256,7 @@ public class WorldScroller : MonoBehaviour
 
     private Chunk PickAvailableChunk()
     {
-        CollectAvailableChunks(true);
-
-        if (candidates.Count == 0 && bossManager.IsArenaActive == false)
-        {
-            CollectAvailableChunks(false);
-        }
+        CollectAvailableChunks();
         if (candidates.Count == 0)
         {
             return null;
@@ -202,7 +264,7 @@ public class WorldScroller : MonoBehaviour
         return candidates[Random.Range(0, candidates.Count)];
     }
 
-    private void CollectAvailableChunks(bool applyRules)
+    private void CollectAvailableChunks()
     {
         candidates.Clear();
         int floorIndex = floorManager.CurrentFloorIndex;
@@ -226,15 +288,6 @@ public class WorldScroller : MonoBehaviour
                 continue;
             }
             if (chunk.BandIndex >= 0 && chunk.BandIndex != floorIndex)
-            {
-                continue;
-            }
-            if (applyRules == false)
-            {
-                candidates.Add(chunk);
-                continue;
-            }
-            if (chunk.MinDistance > distanceTravelled)
             {
                 continue;
             }

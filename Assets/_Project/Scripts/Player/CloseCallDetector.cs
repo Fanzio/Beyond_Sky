@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Rewards close obstacle passes with ammunition instead of increasing the difficulty speed.
-// Rolling is excluded so invulnerability cannot be used to collect risk-free close calls.
 public class CloseCallDetector : MonoBehaviour
 {
     [Header("References")]
@@ -17,15 +15,9 @@ public class CloseCallDetector : MonoBehaviour
     [SerializeField] private int closeCallsPerAmmo = 3;
 
     private Collider2D[] hits = new Collider2D[8];
-    private int closeCallCount;
     private int progressToAmmo;
     private float lastCloseCallTime = -10f;
     private bool lastAwardedAmmo;
-
-    public int CloseCallCount
-    {
-        get { return closeCallCount; }
-    }
 
     public int ProgressToAmmo
     {
@@ -88,8 +80,8 @@ public class CloseCallDetector : MonoBehaviour
     private void Award()
     {
         lastCloseCallTime = Time.time;
-        closeCallCount = closeCallCount + 1;
         progressToAmmo = progressToAmmo + 1;
+        AudioSignals.PlayCloseCall(progressToAmmo, closeCallsPerAmmo);
         lastAwardedAmmo = false;
 
         if (progressToAmmo < closeCallsPerAmmo)

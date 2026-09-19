@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Runs the identical one-at-a-time reinforcement sequence shared by several bosses.
 public class BossReinforcementSequence
 {
     private EnemySpawner enemySpawner;

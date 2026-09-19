@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Creates every aerial mine before gameplay for bosses and standard enemies.
 public class AerialMinePool : MonoBehaviour
 {
     [Header("Pool")]

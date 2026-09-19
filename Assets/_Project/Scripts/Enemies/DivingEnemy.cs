@@ -7,9 +7,6 @@ public enum DiveState
     Dive,
     Explode
 }
-
-// Locks its target before the warning so the committed dive remains readable and avoidable.
-// A destroyed kamikaze still explodes, rewarding players who shoot it before it gets close.
 public class DivingEnemy : EnemyBase
 {
     [Header("Visual")]
@@ -46,14 +43,12 @@ public class DivingEnemy : EnemyBase
     private float stateTimer;
     private Vector2 diveDirection;
     private Vector3 aimPoint;
-    private bool hasDamaged;
 
     public override void Activate(Vector3 startPosition)
     {
         transform.position = startPosition;
         bodyRenderer.color = normalColor;
         bodyRenderer.enabled = true;
-        hasDamaged = false;
 
         if (explosionVisual != null)
         {
@@ -70,6 +65,7 @@ public class DivingEnemy : EnemyBase
             BeginExplosion();
             return;
         }
+        AudioSignals.Play(GameSound.EnemyDestroyed);
         DeactivateEnemy();
     }
 
@@ -205,7 +201,7 @@ public class DivingEnemy : EnemyBase
     private void BeginExplosion()
     {
         ChangeState(DiveState.Explode);
-        hasDamaged = false;
+        AudioSignals.Play(GameSound.Explosion);
         bodyRenderer.enabled = false;
 
         if (explosionVisual != null)
@@ -217,12 +213,6 @@ public class DivingEnemy : EnemyBase
 
     private void DealBlastDamage()
     {
-        if (hasDamaged)
-        {
-            return;
-        }
-        hasDamaged = true;
-
         Collider2D hit = Physics2D.OverlapCircle(
             transform.position, explosionRadius, playerLayers);
 
@@ -268,6 +258,11 @@ public class DivingEnemy : EnemyBase
 
     private void ChangeState(DiveState nextState)
     {
+        if (nextState == DiveState.Telegraph)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         state = nextState;
         stateTimer = 0f;
     }

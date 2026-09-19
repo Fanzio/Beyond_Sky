@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Keeps the plane inside its vertical band while leaving X fixed.
-// Tilt follows actual movement so external movement, including ascension, remains visible.
 public class PlaneController : MonoBehaviour
 {
     [Header("References")]
@@ -117,15 +115,5 @@ public class PlaneController : MonoBehaviour
 
         currentTilt = Mathf.Lerp(currentTilt, targetTilt, tiltSmoothing * deltaTime);
         visual.localRotation = Quaternion.Euler(0f, 0f, currentTilt);
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Vector3 left = new Vector3(transform.position.x - 20f, 0f, 0f);
-        Vector3 right = new Vector3(transform.position.x + 20f, 0f, 0f);
-
-        Gizmos.DrawLine(left + Vector3.up * minY, right + Vector3.up * minY);
-        Gizmos.DrawLine(left + Vector3.up * maxY, right + Vector3.up * maxY);
     }
 }

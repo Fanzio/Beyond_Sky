@@ -16,8 +16,6 @@ public enum ArmedTransportState
     Leaving
 }
 
-// Used by the three city cars and the three sky balloons.
-// Each prefab selects one weapon, performs one attack and then leaves the scene.
 public class ArmedTransportEnemy : EnemyBase
 {
     [Header("Enemy type")]
@@ -40,10 +38,8 @@ public class ArmedTransportEnemy : EnemyBase
     [SerializeField] private float holdX = 12f;
     [SerializeField] private float leaveSpeed = 16f;
     [SerializeField] private float despawnX = -22f;
-    [SerializeField] private bool useFixedY;
-    [SerializeField] private float fixedY = 10.5f;
 
-    [Header("Random aerial entry")]
+    [Header("Entry height - use equal limits for cars")]
     [SerializeField] private float randomEntryMinY = 12f;
     [SerializeField] private float randomEntryMaxY = 28f;
     [SerializeField] private float minimumYDistanceFromPlayer = 4f;
@@ -73,25 +69,16 @@ public class ArmedTransportEnemy : EnemyBase
     private float stateTimer;
     private float shotTimer;
     private int shotsFired;
-    private Vector2 lockedDirection;
-    private Vector3 lockedTargetPosition;
 
     public override void Activate(Vector3 startPosition)
     {
         transform.position = startPosition;
         transform.rotation = Quaternion.identity;
 
-        if (useFixedY)
-        {
-            SetY(fixedY);
-        }
-        else
-        {
-            SetY(PickRandomYAwayFromTarget(
-                randomEntryMinY,
-                randomEntryMaxY,
-                minimumYDistanceFromPlayer));
-        }
+        SetY(PickRandomYAwayFromTarget(
+            randomEntryMinY,
+            randomEntryMaxY,
+            minimumYDistanceFromPlayer));
 
         shotsFired = 0;
         shotTimer = 0f;
@@ -102,6 +89,7 @@ public class ArmedTransportEnemy : EnemyBase
 
     public override void TakeBulletHit()
     {
+        AudioSignals.Play(GameSound.EnemyDestroyed);
         DeactivateEnemy();
     }
 
@@ -149,7 +137,6 @@ public class ArmedTransportEnemy : EnemyBase
         Vector3 position = transform.position;
         position.x = holdX;
         transform.position = position;
-        LockAim();
         ChangeState(ArmedTransportState.Telegraphing);
     }
 
@@ -260,7 +247,18 @@ public class ArmedTransportEnemy : EnemyBase
             speed = sniperBulletSpeed;
         }
 
-        bullet.Launch(GetPointPosition(muzzle), lockedDirection, speed);
+        Vector3 muzzlePosition = GetPointPosition(muzzle);
+        Vector3 targetPosition = GetTargetPosition(muzzlePosition, 10f);
+        Vector2 direction = targetPosition - muzzlePosition;
+
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            direction = Vector2.left;
+        }
+
+        bullet.Launch(muzzlePosition, direction.normalized, speed);
+
+        AudioSignals.Play(GameSound.EnemyShot);
     }
 
     private void FireMissile()
@@ -281,27 +279,12 @@ public class ArmedTransportEnemy : EnemyBase
         }
 
         Vector3 muzzlePosition = GetPointPosition(muzzle);
-        lockedTargetPosition = GetTargetPosition(muzzlePosition, 10f);
+        Vector3 targetPosition = GetTargetPosition(muzzlePosition, 10f);
 
         missile.Launch(
             muzzlePosition,
-            lockedTargetPosition,
+            targetPosition,
             bazookaMissileSpeed);
-    }
-
-    private void LockAim()
-    {
-        Vector3 muzzlePosition = GetPointPosition(muzzle);
-        lockedTargetPosition = GetTargetPosition(muzzlePosition, 10f);
-
-        lockedDirection = lockedTargetPosition - muzzlePosition;
-
-        if (lockedDirection.sqrMagnitude < 0.0001f)
-        {
-            lockedDirection = Vector2.left;
-        }
-
-        lockedDirection.Normalize();
     }
 
     private int GetShotCount()
@@ -379,6 +362,11 @@ public class ArmedTransportEnemy : EnemyBase
 
     private void ChangeState(ArmedTransportState nextState)
     {
+        if (nextState == ArmedTransportState.Telegraphing)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         state = nextState;
         stateTimer = 0f;
     }

@@ -10,7 +10,6 @@ public class EnemyEntry
     [SerializeField] private int[] floors;
 
     [SerializeField] private int poolSize = 3;
-    [SerializeField] private bool enabled = true;
 
     [Header("Leave empty to use the spawner's default pool")]
     [SerializeField] private BulletPool bulletPool;
@@ -34,11 +33,6 @@ public class EnemyEntry
         get { return poolSize; }
     }
 
-    public bool IsEnabled
-    {
-        get { return enabled; }
-    }
-
     public BulletPool BulletPool
     {
         get { return bulletPool; }
@@ -55,8 +49,6 @@ public class EnemyEntry
     }
 }
 
-// Creates every enemy pool before gameplay, handles normal random spawning and lets
-// bosses request an exact prefab while bypassing the normal spawn limits.
 public class EnemySpawner : MonoBehaviour
 {
     [Header("References")]
@@ -95,11 +87,6 @@ public class EnemySpawner : MonoBehaviour
         {
             EnemyEntry entry = entries[i];
 
-            if (entry.IsEnabled == false)
-            {
-                continue;
-            }
-
             if (entry.Prefab == null)
             {
                 continue;
@@ -134,6 +121,11 @@ public class EnemySpawner : MonoBehaviour
         }
 
         if (bossManager.IsArenaActive)
+        {
+            return;
+        }
+
+        if (worldScroller.IsOpeningClear)
         {
             return;
         }

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6897405356713358071}
   - component: {fileID: 5456603461858069586}
   m_Layer: 0
-  m_Name: Gemini_Generated_Image_5ymptu5ymptu5ymp-removebg-preview
+  m_Name: EnemyGun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

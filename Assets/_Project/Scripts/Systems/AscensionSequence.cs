@@ -1,7 +1,4 @@
 using UnityEngine;
-
-// Stages the climb after a boss while input is locked.
-// The background changes near the middle, when the faster parallax hides the transition.
 public class AscensionSequence : MonoBehaviour
 {
     [Header("References")]
@@ -17,7 +14,8 @@ public class AscensionSequence : MonoBehaviour
     [SerializeField] private float swapAtProgress = 0.45f;
 
     [Header("Effect")]
-    [SerializeField] private float ascensionVerticalFactor = 0.9f;
+    [Min(0f)]
+    [SerializeField] private float backgroundTravelDistance = 20f;
     [SerializeField] private float climbHeight = 5f;
     [SerializeField] private float noseUpAngle = 28f;
 
@@ -25,6 +23,7 @@ public class AscensionSequence : MonoBehaviour
     private float timer;
     private float startY;
     private bool hasSwapped;
+    private int previousFloorIndex;
 
     public bool IsPlaying
     {
@@ -33,6 +32,7 @@ public class AscensionSequence : MonoBehaviour
 
     public void Begin()
     {
+        previousFloorIndex = floorManager.CurrentFloorIndex;
         bool wasTopFloor = floorManager.IsTopFloor;
         floorManager.NotifyBossDefeated();
 
@@ -42,9 +42,12 @@ public class AscensionSequence : MonoBehaviour
         }
 
         isPlaying = true;
+        AudioSignals.Play(GameSound.Ascension);
         timer = 0f;
         hasSwapped = false;
         startY = planeController.transform.position.y;
+        backgroundSwitcher.CaptureVerticalStart(previousFloorIndex);
+        backgroundSwitcher.CaptureVerticalStart(floorManager.CurrentFloorIndex);
 
         planeInput.SetLocked(true);
         gameManager.SetAscending(true);
@@ -58,13 +61,14 @@ public class AscensionSequence : MonoBehaviour
         }
 
         timer = timer + Time.deltaTime;
-        float progress = Mathf.Clamp01(timer / duration);
+        float progress = Mathf.Clamp01(timer / Mathf.Max(0.01f, duration));
+        float swapProgress = Mathf.Clamp(swapAtProgress, 0.01f, 0.99f);
         float shape = Mathf.Sin(progress * 180f * Mathf.Deg2Rad);
 
-        backgroundSwitcher.SetExtraVerticalFactor(shape * ascensionVerticalFactor);
+        ApplyBackgroundMovement(progress, swapProgress);
         planeController.SetTiltOverride(shape * noseUpAngle);
         ApplyClimb(shape);
-        SwapWhenDue(progress);
+        SwapWhenDue(progress, swapProgress);
 
         if (progress < 1f)
         {
@@ -74,19 +78,31 @@ public class AscensionSequence : MonoBehaviour
         Finish();
     }
 
+    private void ApplyBackgroundMovement(float progress, float swapProgress)
+    {
+        float movement = (1f - Mathf.Cos(progress * Mathf.PI)) * 0.5f;
+        float movementAtSwap = (1f - Mathf.Cos(swapProgress * Mathf.PI)) * 0.5f;
+        float fullDistance = backgroundTravelDistance / (1f - movementAtSwap);
+        float outgoingDistance = fullDistance * Mathf.Min(movement, movementAtSwap);
+        float incomingDistance = fullDistance * Mathf.Max(0f, movement - movementAtSwap);
+
+        backgroundSwitcher.SetVerticalDisplacement(previousFloorIndex, outgoingDistance);
+        backgroundSwitcher.SetVerticalDisplacement(floorManager.CurrentFloorIndex, incomingDistance);
+    }
+
     private void ApplyClimb(float shape)
     {
         float targetY = startY + shape * climbHeight;
         planeController.MoveVerticalBy(targetY - planeController.transform.position.y);
     }
 
-    private void SwapWhenDue(float progress)
+    private void SwapWhenDue(float progress, float swapProgress)
     {
         if (hasSwapped)
         {
             return;
         }
-        if (progress < swapAtProgress)
+        if (progress < swapProgress)
         {
             return;
         }
@@ -98,7 +114,8 @@ public class AscensionSequence : MonoBehaviour
     private void Finish()
     {
         isPlaying = false;
-        backgroundSwitcher.SetExtraVerticalFactor(0f);
+        backgroundSwitcher.SetVerticalDisplacement(
+            floorManager.CurrentFloorIndex, backgroundTravelDistance);
         planeController.ClearTiltOverride();
         planeInput.SetLocked(false);
         gameManager.SetAscending(false);

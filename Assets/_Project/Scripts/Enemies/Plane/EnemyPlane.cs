@@ -5,11 +5,9 @@ public enum EnemyState
     Enter,
     Track,
     Telegraph,
-    Leave
+    Leave,
+    SustainedFire
 }
-
-// Fires only after aligning and showing a warning, keeping every shot readable.
-// It holds X while tracking so the player only has to break the vertical alignment.
 public class EnemyPlane : EnemyBase
 {
     [Header("Visual")]
@@ -39,6 +37,7 @@ public class EnemyPlane : EnemyBase
 
     [Header("Firing")]
     [SerializeField] private Transform muzzle;
+    [SerializeField] private Transform secondMuzzle;
     [SerializeField] private float bulletSpeed = 22f;
 
     private EnemyState state;
@@ -58,12 +57,18 @@ public class EnemyPlane : EnemyBase
 
     public override void TakeBulletHit()
     {
+        AudioSignals.Play(GameSound.EnemyDestroyed);
         DeactivateEnemy();
     }
 
     private void Update()
     {
         float deltaTime = Time.deltaTime;
+        if (deltaTime <= 0f)
+        {
+            return;
+        }
+
         stateTimer = stateTimer + deltaTime;
 
         if (state == EnemyState.Enter)
@@ -79,6 +84,11 @@ public class EnemyPlane : EnemyBase
         if (state == EnemyState.Telegraph)
         {
             UpdateTelegraph();
+            return;
+        }
+        if (state == EnemyState.SustainedFire)
+        {
+            UpdateSustainedFire(deltaTime);
             return;
         }
         UpdateLeave(deltaTime);
@@ -98,17 +108,11 @@ public class EnemyPlane : EnemyBase
     private void UpdateTrack(float deltaTime)
     {
         stayTimer = stayTimer + deltaTime;
-        TickCooldown(deltaTime);
-
         TrackPointToTargetY(muzzle, trackSpeed, minY, maxY, deltaTime);
 
         if (stayTimer >= stayDuration)
         {
             ChangeState(EnemyState.Leave);
-            return;
-        }
-        if (cooldownTimer > 0f)
-        {
             return;
         }
         if (IsAlignedWithTarget() == false)
@@ -121,6 +125,8 @@ public class EnemyPlane : EnemyBase
     private void UpdateTelegraph()
     {
         stayTimer = stayTimer + Time.deltaTime;
+
+        TrackPointToTargetY(muzzle, trackSpeed, minY, maxY, Time.deltaTime);
 
         bodyRenderer.color = FlashBetween(normalColor, telegraphColor, flashSpeed);
 
@@ -138,7 +144,27 @@ public class EnemyPlane : EnemyBase
             ChangeState(EnemyState.Leave);
             return;
         }
-        ChangeState(EnemyState.Track);
+        ChangeState(EnemyState.SustainedFire);
+    }
+
+    private void UpdateSustainedFire(float deltaTime)
+    {
+        stayTimer = stayTimer + deltaTime;
+        if (stayTimer >= stayDuration)
+        {
+            ChangeState(EnemyState.Leave);
+            return;
+        }
+
+        TrackPointToTargetY(muzzle, trackSpeed, minY, maxY, deltaTime);
+        TickCooldown(deltaTime);
+        if (cooldownTimer > 0f)
+        {
+            return;
+        }
+
+        FireBullet();
+        cooldownTimer = Mathf.Max(0.03f, shotCooldown);
     }
 
     private void UpdateLeave(float deltaTime)
@@ -170,22 +196,46 @@ public class EnemyPlane : EnemyBase
 
     private void FireBullet()
     {
+        bool fired = FireFromMuzzle(muzzle);
+
+        if (secondMuzzle != null && secondMuzzle != muzzle)
+        {
+            if (FireFromMuzzle(secondMuzzle))
+            {
+                fired = true;
+            }
+        }
+
+        if (fired)
+        {
+            AudioSignals.Play(GameSound.EnemyShot);
+        }
+    }
+
+    private bool FireFromMuzzle(Transform firePoint)
+    {
         if (NormalBulletPool == null)
         {
-            return;
+            return false;
         }
 
         Bullet bullet = NormalBulletPool.GetBullet();
 
         if (bullet == null)
         {
-            return;
+            return false;
         }
-        bullet.Launch(GetPointPosition(muzzle), Vector2.left, bulletSpeed);
+        bullet.Launch(GetPointPosition(firePoint), Vector2.left, bulletSpeed);
+        return true;
     }
 
     private void ChangeState(EnemyState nextState)
     {
+        if (nextState == EnemyState.Telegraph)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         state = nextState;
         stateTimer = 0f;
     }

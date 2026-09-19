@@ -1,7 +1,6 @@
 using UnityEngine;
 
-// Moves an obstacle horizontally inside its chunk. The chunk captures and restores the
-// starting position because objects are recycled, while the Range protects reaction time.
+
 public class MovingObstacle : MonoBehaviour
 {
     [Header("Drift - negative comes at the player")]

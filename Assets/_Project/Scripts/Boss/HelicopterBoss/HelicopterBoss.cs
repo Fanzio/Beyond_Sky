@@ -21,7 +21,6 @@ public enum HelicopterBossState
     Recover
 }
 
-// Agile city boss that controls space with fan volleys, aerial mines and a fast strafe.
 public class HelicopterBoss : BossBase
 {
     [Header("Visual warnings")]
@@ -64,6 +63,8 @@ public class HelicopterBoss : BossBase
     [SerializeField] private int mineCount = 2;
     [SerializeField] private float mineDeployInterval = 0.15f;
     [SerializeField] private float mineTravelDuration = 0.55f;
+    [Min(0.05f)]
+    [SerializeField] private float mineArmedDuration = 0.65f;
     [SerializeField] private float mineFieldX = 0f;
     [SerializeField] private float mineMinY = 12f;
     [SerializeField] private float mineMaxY = 28f;
@@ -329,6 +330,7 @@ public class HelicopterBoss : BossBase
             Quaternion rotation = Quaternion.Euler(0f, 0f, angle);
             Vector2 direction = rotation * baseDirection;
             bullet.Launch(muzzlePosition, direction, fanBulletSpeed);
+            AudioSignals.Play(GameSound.EnemyShot);
         }
     }
 
@@ -391,7 +393,8 @@ public class HelicopterBoss : BossBase
                 mine.Deploy(
                     GetPointPosition(mineDropPoint),
                     destination,
-                    mineTravelDuration);
+                    mineTravelDuration,
+                    mineArmedDuration);
             }
         }
 
@@ -596,6 +599,13 @@ public class HelicopterBoss : BossBase
 
     private void ChangeAttackState(HelicopterBossState nextState)
     {
+        if (nextState == HelicopterBossState.FanTelegraph ||
+            nextState == HelicopterBossState.MineTelegraph ||
+            nextState == HelicopterBossState.StrafeLocked)
+        {
+            AudioSignals.Play(GameSound.EnemyWarning);
+        }
+
         attackState = nextState;
         stateTimer = 0f;
     }

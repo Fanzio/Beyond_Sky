@@ -17,8 +17,6 @@ public class FloorBackground
     }
 }
 
-// Keeps one prebuilt pair of parallax layers per floor and changes visibility without
-// rebuilding grids during gameplay.
 public class BackgroundSwitcher : MonoBehaviour
 {
     [Header("Floors - same order as FloorManager")]
@@ -34,13 +32,16 @@ public class BackgroundSwitcher : MonoBehaviour
         }
     }
 
-    public void SetExtraVerticalFactor(float extra)
+    public void CaptureVerticalStart(int floorIndex)
     {
-        for (int i = 0; i < floors.Length; i++)
-        {
-            floors[i].FarLayer.SetExtraVerticalFactor(extra);
-            floors[i].NearLayer.SetExtraVerticalFactor(extra);
-        }
+        floors[floorIndex].FarLayer.CaptureVerticalStart();
+        floors[floorIndex].NearLayer.CaptureVerticalStart();
+    }
+
+    public void SetVerticalDisplacement(int floorIndex, float distance)
+    {
+        floors[floorIndex].FarLayer.SetVerticalDisplacement(distance);
+        floors[floorIndex].NearLayer.SetVerticalDisplacement(distance);
     }
 
     private void Start()

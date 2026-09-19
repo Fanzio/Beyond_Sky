@@ -1,6 +1,5 @@
 using UnityEngine;
 
-// Performs an in-place aileron roll and keeps the plane invulnerable for its duration.
 public class PlaneDodge : MonoBehaviour
 {
     [Header("References")]
@@ -84,6 +83,7 @@ public class PlaneDodge : MonoBehaviour
         }
 
         isRolling = true;
+        AudioSignals.Play(GameSound.Dodge);
         rollTimer = 0f;
         rollDirection = direction;
     }
