@@ -1,51 +1,55 @@
+// Attiva il fondale corrispondente al piano corrente.
 using UnityEngine;
 
-[System.Serializable]
-public class FloorBackground
+namespace BeyondSky.World
 {
-    [SerializeField] private ParallaxLayer farLayer;
-    [SerializeField] private ParallaxLayer nearLayer;
-
-    public ParallaxLayer FarLayer
+    [System.Serializable]
+    public class FloorBackground
     {
-        get { return farLayer; }
-    }
+        [SerializeField] private ParallaxLayer farLayer;
+        [SerializeField] private ParallaxLayer nearLayer;
 
-    public ParallaxLayer NearLayer
-    {
-        get { return nearLayer; }
-    }
-}
-
-public class BackgroundSwitcher : MonoBehaviour
-{
-    [Header("Floors - same order as FloorManager")]
-    [SerializeField] private FloorBackground[] floors;
-
-    public void ShowFloor(int floorIndex)
-    {
-        for (int i = 0; i < floors.Length; i++)
+        public ParallaxLayer FarLayer
         {
-            bool visible = i == floorIndex;
-            floors[i].FarLayer.SetVisible(visible);
-            floors[i].NearLayer.SetVisible(visible);
+            get { return farLayer; }
+        }
+
+        public ParallaxLayer NearLayer
+        {
+            get { return nearLayer; }
         }
     }
 
-    public void CaptureVerticalStart(int floorIndex)
+    public class BackgroundSwitcher : MonoBehaviour
     {
-        floors[floorIndex].FarLayer.CaptureVerticalStart();
-        floors[floorIndex].NearLayer.CaptureVerticalStart();
-    }
+        [Header("Floors - same order as FloorManager")]
+        [SerializeField] private FloorBackground[] floors;
 
-    public void SetVerticalDisplacement(int floorIndex, float distance)
-    {
-        floors[floorIndex].FarLayer.SetVerticalDisplacement(distance);
-        floors[floorIndex].NearLayer.SetVerticalDisplacement(distance);
-    }
+        public void ShowFloor(int floorIndex)
+        {
+            for (int i = 0; i < floors.Length; i++)
+            {
+                bool visible = i == floorIndex;
+                floors[i].FarLayer.SetVisible(visible);
+                floors[i].NearLayer.SetVisible(visible);
+            }
+        }
 
-    private void Start()
-    {
-        ShowFloor(0);
+        public void CaptureVerticalStart(int floorIndex)
+        {
+            floors[floorIndex].FarLayer.CaptureVerticalStart();
+            floors[floorIndex].NearLayer.CaptureVerticalStart();
+        }
+
+        public void SetVerticalDisplacement(int floorIndex, float distance)
+        {
+            floors[floorIndex].FarLayer.SetVerticalDisplacement(distance);
+            floors[floorIndex].NearLayer.SetVerticalDisplacement(distance);
+        }
+
+        private void Start()
+        {
+            ShowFloor(0);
+        }
     }
 }

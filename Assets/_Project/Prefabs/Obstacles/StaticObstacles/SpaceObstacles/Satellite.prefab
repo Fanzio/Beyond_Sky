@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7631334057030307964}
   - component: {fileID: 8595856974801116590}
   - component: {fileID: 8641502019007615986}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Satellite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -110,7 +110,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3663377775630264933}
   - component: {fileID: 36524294030304305}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -187,7 +187,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2878393226955655902}
   - component: {fileID: 330394309563576289}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -264,7 +264,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5545090543200360416}
   - component: {fileID: 774188804934231238}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

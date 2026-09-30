@@ -1,92 +1,100 @@
+// Gestisce munizioni, ricarica e lancio dei proiettili del player.
 using UnityEngine;
+using BeyondSky.Audio;
+using BeyondSky.Enemies;
+using BeyondSky.Input;
+using BeyondSky.Systems;
 
-public class PlaneWeapon : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("References")]
-    [SerializeField] private PlaneInput planeInput;
-    [SerializeField] private BulletPool bulletPool;
-    [SerializeField] private GameManager gameManager;
-    [SerializeField] private Transform muzzle;
-
-    [Header("Firing")]
-    [SerializeField] private float bulletSpeed = 34f;
-    [SerializeField] private float fireCooldown = 0.18f;
-
-    [Header("Ammo")]
-    [SerializeField] private int startingAmmo = 0;
-
-    private int ammo;
-    private float cooldownTimer;
-
-    public int Ammo
+    public class PlaneWeapon : MonoBehaviour
     {
-        get { return ammo; }
-    }
+        [Header("References")]
+        [SerializeField] private PlaneInput planeInput;
+        [SerializeField] private BulletPool bulletPool;
+        [SerializeField] private GameManager gameManager;
+        [SerializeField] private Transform muzzle;
 
-    public void AddAmmo(int amount)
-    {
-        ammo = ammo + amount;
-        if (amount > 0)
+        [Header("Firing")]
+        [SerializeField] private float bulletSpeed = 34f;
+        [SerializeField] private float fireCooldown = 0.18f;
+
+        [Header("Ammo")]
+        [SerializeField] private int startingAmmo = 0;
+
+        private int ammo;
+        private float cooldownTimer;
+
+        public int Ammo
         {
-            AudioSignals.Play(GameSound.AmmoPickup);
-        }
-    }
-
-    private void Awake()
-    {
-        ammo = startingAmmo;
-    }
-
-    private void Update()
-    {
-        if (gameManager.IsGameOver)
-        {
-            planeInput.ConsumeFire();
-            return;
+            get { return ammo; }
         }
 
-        TickCooldown(Time.deltaTime);
-
-        if (planeInput.ConsumeFire() == false)
+        public void AddAmmo(int amount)
         {
-            return;
+            ammo = ammo + amount;
+            if (amount > 0)
+            {
+                AudioSignals.Play(GameSound.AmmoPickup);
+            }
         }
 
-        TryFire();
-    }
-
-    private void TickCooldown(float deltaTime)
-    {
-        if (cooldownTimer <= 0f)
+        private void Awake()
         {
-            return;
+            ammo = startingAmmo;
         }
 
-        cooldownTimer = cooldownTimer - deltaTime;
-    }
-
-    private void TryFire()
-    {
-        if (ammo <= 0)
+        private void Update()
         {
-            return;
+            if (gameManager.IsGameOver || Time.timeScale == 0f)
+            {
+                planeInput.ConsumeFire();
+                return;
+            }
+
+            TickCooldown(Time.deltaTime);
+
+            if (planeInput.ConsumeFire() == false)
+            {
+                return;
+            }
+
+            TryFire();
         }
 
-        if (cooldownTimer > 0f)
+        private void TickCooldown(float deltaTime)
         {
-            return;
+            if (cooldownTimer <= 0f)
+            {
+                return;
+            }
+
+            cooldownTimer = cooldownTimer - deltaTime;
         }
 
-        Bullet bullet = bulletPool.GetBullet();
-
-        if (bullet == null)
+        private void TryFire()
         {
-            return;
-        }
+            if (ammo <= 0)
+            {
+                return;
+            }
 
-        bullet.Launch(muzzle.position, Vector2.right, bulletSpeed);
-        AudioSignals.Play(GameSound.PlayerShot);
-        ammo = ammo - 1;
-        cooldownTimer = fireCooldown;
+            if (cooldownTimer > 0f)
+            {
+                return;
+            }
+
+            Bullet bullet = bulletPool.GetBullet();
+
+            if (bullet == null)
+            {
+                return;
+            }
+
+            bullet.Launch(muzzle.position, Vector2.right, bulletSpeed);
+            AudioSignals.Play(GameSound.PlayerShot);
+            ammo = ammo - 1;
+            cooldownTimer = fireCooldown;
+        }
     }
 }

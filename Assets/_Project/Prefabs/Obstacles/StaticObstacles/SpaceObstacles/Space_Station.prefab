@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2441576809823374792}
   - component: {fileID: 4651773851024959953}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -87,7 +87,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1599282346352091041}
   - component: {fileID: 2309454767987019848}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -166,7 +166,7 @@ GameObject:
   - component: {fileID: 8574229255357871331}
   - component: {fileID: 4072338941912603550}
   - component: {fileID: 1828918190216563805}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Space_Station
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -310,7 +310,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2556151474798753318}
   - component: {fileID: 5244312558787529714}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GameObject (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -1,61 +1,64 @@
+// Gestisce gli stati della partita e salva i risultati alla morte del player.
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+namespace BeyondSky.Systems
 {
-    [Header("References")]
-    [SerializeField] private ScoreManager scoreManager;
-
-    [Header("Restart")]
-    [SerializeField] private float restartDelay = 0.6f;
-
-    private bool isAscending;
-    private bool isGameOver;
-    private bool isNewRecord;
-    private float gameOverTime;
-
-    public bool IsGameOver
+    public class GameManager : MonoBehaviour
     {
-        get { return isGameOver; }
-    }
+        [Header("References")]
+        [SerializeField] private ScoreManager scoreManager;
 
-    public bool IsAscending
-    {
-        get { return isAscending; }
-    }
+        [Header("Restart")]
+        [SerializeField] private float restartDelay = 0.6f;
 
-    public bool IsNewRecord
-    {
-        get { return isNewRecord; }
-    }
+        private bool isAscending;
+        private bool isGameOver;
+        private bool isNewRecord;
+        private float gameOverTime;
 
-    public bool CanRestart
-    {
-        get { return isGameOver && Time.unscaledTime - gameOverTime >= restartDelay; }
-    }
-
-    public void SetAscending(bool ascending)
-    {
-        isAscending = ascending;
-    }
-
-    public void GameOver()
-    {
-        if (isGameOver)
+        public bool IsGameOver
         {
-            return;
+            get { return isGameOver; }
         }
 
-        isGameOver = true;
-        gameOverTime = Time.unscaledTime;
-        isNewRecord = scoreManager.SaveIfBest();
-        scoreManager.SaveCoins();
+        public bool IsAscending
+        {
+            get { return isAscending; }
+        }
 
-        Time.timeScale = 0f;
+        public bool IsNewRecord
+        {
+            get { return isNewRecord; }
+        }
+
+        public bool CanRestart
+        {
+            get { return isGameOver && Time.unscaledTime - gameOverTime >= restartDelay; }
+        }
+
+        public void SetAscending(bool ascending)
+        {
+            isAscending = ascending;
+        }
+
+        public void GameOver()
+        {
+            if (isGameOver)
+            {
+                return;
+            }
+
+            isGameOver = true;
+            gameOverTime = Time.unscaledTime;
+            isNewRecord = scoreManager.SaveRunResults();
+
+            Time.timeScale = 0f;
+        }
+
+        private void Awake()
+        {
+            Time.timeScale = 1f;
+        }
+
     }
-
-    private void Awake()
-    {
-        Time.timeScale = 1f;
-    }
-
 }

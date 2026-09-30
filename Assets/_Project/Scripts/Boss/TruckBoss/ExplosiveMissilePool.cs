@@ -1,51 +1,54 @@
+// Fornisce e riutilizza i missili esplosivi.
 using System.Collections.Generic;
 using UnityEngine;
 
-// Creates every explosive missile before gameplay for bosses and standard enemies.
-public class ExplosiveMissilePool : MonoBehaviour
+namespace BeyondSky.Boss
 {
-    [Header("Pool")]
-    [SerializeField] private ExplosiveMissile missilePrefab;
-    [SerializeField] private int poolSize = 4;
-
-    private List<ExplosiveMissile> missiles = new List<ExplosiveMissile>();
-
-    private void Awake()
+    public class ExplosiveMissilePool : MonoBehaviour
     {
-        if (missilePrefab == null)
-        {
-            Debug.LogError("ExplosiveMissilePool: missilePrefab non assegnato.", this);
-            return;
-        }
+        [Header("Pool")]
+        [SerializeField] private ExplosiveMissile missilePrefab;
+        [SerializeField] private int poolSize = 4;
 
-        for (int i = 0; i < poolSize; i++)
-        {
-            ExplosiveMissile missile = Instantiate(missilePrefab, transform);
-            missile.gameObject.SetActive(false);
-            missiles.Add(missile);
-        }
-    }
+        private List<ExplosiveMissile> missiles = new List<ExplosiveMissile>();
 
-    public ExplosiveMissile GetMissile()
-    {
-        for (int i = 0; i < missiles.Count; i++)
+        private void Awake()
         {
-            if (missiles[i].gameObject.activeSelf)
+            if (missilePrefab == null)
             {
-                continue;
+                Debug.LogError("ExplosiveMissilePool: missilePrefab non assegnato.", this);
+                return;
             }
 
-            return missiles[i];
+            for (int i = 0; i < poolSize; i++)
+            {
+                ExplosiveMissile missile = Instantiate(missilePrefab, transform);
+                missile.gameObject.SetActive(false);
+                missiles.Add(missile);
+            }
         }
 
-        return null;
-    }
-
-    public void DespawnAll()
-    {
-        for (int i = 0; i < missiles.Count; i++)
+        public ExplosiveMissile GetMissile()
         {
-            missiles[i].Despawn();
+            for (int i = 0; i < missiles.Count; i++)
+            {
+                if (missiles[i].gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                return missiles[i];
+            }
+
+            return null;
+        }
+
+        public void DespawnAll()
+        {
+            for (int i = 0; i < missiles.Count; i++)
+            {
+                missiles[i].Despawn();
+            }
         }
     }
 }

@@ -1,103 +1,108 @@
+// Controlla il percorso del player per rilevare urti e applicarne gli effetti.
 using UnityEngine;
+using BeyondSky.Systems;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class PlaneCollision : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("References")]
-    [SerializeField] private PlaneController planeController;
-    [SerializeField] private PlaneDodge planeDodge;
-    [SerializeField] private PlaneShield planeShield;
-    [SerializeField] private SpeedManager speedManager;
-    [SerializeField] private GameManager gameManager;
-
-    [Header("Collision")]
-    [SerializeField] private LayerMask obstacleLayers;
-    [SerializeField] private float hitRadius = 0.5f;
-
-    private void Awake()
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class PlaneCollision : MonoBehaviour
     {
-        Rigidbody2D body = GetComponent<Rigidbody2D>();
-        body.bodyType = RigidbodyType2D.Kinematic;
-        body.simulated = true;
-    }
+        [Header("References")]
+        [SerializeField] private PlaneController planeController;
+        [SerializeField] private PlaneDodge planeDodge;
+        [SerializeField] private PlaneShield planeShield;
+        [SerializeField] private SpeedManager speedManager;
+        [SerializeField] private GameManager gameManager;
 
-    private void Update()
-    {
-        if (ShouldIgnoreHit())
+        [Header("Collision")]
+        [SerializeField] private LayerMask obstacleLayers;
+        [SerializeField] private float hitRadius = 0.5f;
+
+        private void Awake()
         {
-            return;
+            Rigidbody2D body = GetComponent<Rigidbody2D>();
+            body.bodyType = RigidbodyType2D.Kinematic;
+            body.simulated = true;
         }
 
-        if (HasHitObstacle() == false)
+        private void Update()
         {
-            return;
+            if (ShouldIgnoreHit())
+            {
+                return;
+            }
+
+            if (HasHitObstacle() == false)
+            {
+                return;
+            }
+
+            TakeHit();
         }
 
-        TakeHit();
-    }
-
-    public void TakeHit()
-    {
-        if (ShouldIgnoreHit())
+        public void TakeHit()
         {
-            return;
+            if (ShouldIgnoreHit())
+            {
+                return;
+            }
+
+            if (planeShield.ConsumeShield())
+            {
+                return;
+            }
+
+            gameManager.GameOver();
         }
 
-        if (planeShield.ConsumeShield())
+        private bool ShouldIgnoreHit()
         {
-            return;
-        }
+            if (gameManager.IsGameOver)
+            {
+                return true;
+            }
 
-        gameManager.GameOver();
-    }
+            if (gameManager.IsAscending)
+            {
+                return true;
+            }
 
-    private bool ShouldIgnoreHit()
-    {
-        if (gameManager.IsGameOver)
-        {
-            return true;
-        }
+            if (planeDodge.IsInvulnerable)
+            {
+                return true;
+            }
 
-        if (gameManager.IsAscending)
-        {
-            return true;
-        }
+            if (planeShield.IsInvulnerable)
+            {
+                return true;
+            }
 
-        if (planeDodge.IsInvulnerable)
-        {
-            return true;
-        }
-
-        if (planeShield.IsInvulnerable)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    private bool HasHitObstacle()
-    {
-        Vector2 relativeStep = new Vector2(
-            speedManager.CurrentSpeed * Time.deltaTime,
-            planeController.VerticalVelocity * Time.deltaTime);
-
-        float distance = relativeStep.magnitude;
-
-        if (distance < 0.0001f)
-        {
             return false;
         }
 
-        RaycastHit2D hit = Physics2D.CircleCast(
-            transform.position, hitRadius, relativeStep.normalized, distance, obstacleLayers);
+        private bool HasHitObstacle()
+        {
+            Vector2 relativeStep = new Vector2(
+                speedManager.CurrentSpeed * Time.deltaTime,
+                planeController.VerticalVelocity * Time.deltaTime);
 
-        return hit.collider != null;
-    }
+            float distance = relativeStep.magnitude;
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, hitRadius);
+            if (distance < 0.0001f)
+            {
+                return false;
+            }
+
+            RaycastHit2D hit = Physics2D.CircleCast(
+                transform.position, hitRadius, relativeStep.normalized, distance, obstacleLayers);
+
+            return hit.collider != null;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, hitRadius);
+        }
     }
 }

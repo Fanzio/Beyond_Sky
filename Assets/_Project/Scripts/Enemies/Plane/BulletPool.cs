@@ -1,44 +1,48 @@
+// Fornisce e riutilizza i proiettili senza ricrearli a ogni sparo.
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BulletPool : MonoBehaviour
+namespace BeyondSky.Enemies
 {
-    [Header("Pool")]
-    [SerializeField] private Bullet bulletPrefab;
-    [SerializeField] private int poolSize = 16;
-
-    private List<Bullet> bullets = new List<Bullet>();
-
-    private void Awake()
+    public class BulletPool : MonoBehaviour
     {
-        for (int i = 0; i < poolSize; i++)
-        {
-            Bullet bullet = Instantiate(bulletPrefab, transform);
-            bullet.gameObject.SetActive(false);
-            bullets.Add(bullet);
-        }
-    }
+        [Header("Pool")]
+        [SerializeField] private Bullet bulletPrefab;
+        [SerializeField] private int poolSize = 16;
 
-    public Bullet GetBullet()
-    {
-        for (int i = 0; i < bullets.Count; i++)
+        private List<Bullet> bullets = new List<Bullet>();
+
+        private void Awake()
         {
-            if (bullets[i].gameObject.activeSelf)
+            for (int i = 0; i < poolSize; i++)
             {
-                continue;
+                Bullet bullet = Instantiate(bulletPrefab, transform);
+                bullet.gameObject.SetActive(false);
+                bullets.Add(bullet);
+            }
+        }
+
+        public Bullet GetBullet()
+        {
+            for (int i = 0; i < bullets.Count; i++)
+            {
+                if (bullets[i].gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                return bullets[i];
             }
 
-            return bullets[i];
+            return null;
         }
 
-        return null;
-    }
-
-    public void DespawnAll()
-    {
-        for (int i = 0; i < bullets.Count; i++)
+        public void DespawnAll()
         {
-            bullets[i].Despawn();
+            for (int i = 0; i < bullets.Count; i++)
+            {
+                bullets[i].Despawn();
+            }
         }
     }
 }

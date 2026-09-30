@@ -1,14 +1,18 @@
+// Imposta il limite di fotogrammi e le impostazioni iniziali di esecuzione.
 using UnityEngine;
 
-public class ApplicationBootstrap : MonoBehaviour
+namespace BeyondSky.Systems
 {
-    [Header("Performance")]
-    [SerializeField] private int targetFrameRate = 60;
-
-    private void Awake()
+    public class ApplicationBootstrap : MonoBehaviour
     {
-        Application.targetFrameRate = targetFrameRate;
-        QualitySettings.vSyncCount = 0;
-        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+        [Header("Performance")]
+        [SerializeField] private int targetFrameRate = 60;
+
+        private void Awake()
+        {
+            Application.targetFrameRate = targetFrameRate;
+            QualitySettings.vSyncCount = 0;
+            Screen.sleepTimeout = SleepTimeout.SystemSetting;
+        }
     }
 }

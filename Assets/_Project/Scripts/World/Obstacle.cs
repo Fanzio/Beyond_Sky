@@ -1,23 +1,27 @@
+// Gestisce danni, distruzione e ripristino di un ostacolo.
 using UnityEngine;
+using BeyondSky.Audio;
 
-// Hides destroyed obstacles so their chunk can restore and reuse them later.
-public class Obstacle : MonoBehaviour
+namespace BeyondSky.World
 {
-    private bool isDestroyed;
-
-    public void DestroyObstacle()
+    public class Obstacle : MonoBehaviour
     {
-        if (isDestroyed == false)
+        private bool isDestroyed;
+
+        public void DestroyObstacle()
         {
-            AudioSignals.Play(GameSound.ObstacleDestroyed);
+            if (isDestroyed == false)
+            {
+                AudioSignals.Play(GameSound.ObstacleDestroyed);
+            }
+            isDestroyed = true;
+            gameObject.SetActive(false);
         }
-        isDestroyed = true;
-        gameObject.SetActive(false);
-    }
 
-    public void ResetObstacle()
-    {
-        isDestroyed = false;
-        gameObject.SetActive(true);
+        public void ResetObstacle()
+        {
+            isDestroyed = false;
+            gameObject.SetActive(true);
+        }
     }
 }

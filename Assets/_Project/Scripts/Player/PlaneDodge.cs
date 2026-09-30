@@ -1,124 +1,130 @@
+// Gestisce la schivata, la sua invulnerabilità e il tempo di ricarica.
 using UnityEngine;
+using BeyondSky.Audio;
+using BeyondSky.Input;
 
-public class PlaneDodge : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("References")]
-    [SerializeField] private PlaneInput planeInput;
-    [SerializeField] private Transform visual;
-
-    [Header("Roll")]
-    [SerializeField] private float rollDuration;
-    [SerializeField] private float rollBankAngle;
-
-    [Header("Cooldown")]
-    [SerializeField] private float cooldown;
-
-    private bool isRolling;
-    private float rollTimer;
-    private float rollDirection;
-    private float cooldownTimer;
-    private Vector3 baseScale;
-
-    public bool IsRolling
+    public class PlaneDodge : MonoBehaviour
     {
-        get { return isRolling; }
-    }
+        [Header("References")]
+        [SerializeField] private PlaneInput planeInput;
+        [SerializeField] private Transform visual;
 
-    public bool IsInvulnerable
-    {
-        get { return isRolling; }
-    }
+        [Header("Roll")]
+        [SerializeField] private float rollDuration;
+        [SerializeField] private float rollBankAngle;
 
-    public bool IsReady
-    {
-        get { return cooldownTimer <= 0f; }
-    }
+        [Header("Cooldown")]
+        [SerializeField] private float cooldown;
 
-    public float CooldownNormalized
-    {
-        get { return 1f - Mathf.Clamp01(cooldownTimer / cooldown); }
-    }
-    private void Awake()
-    {
-        baseScale = visual.localScale;
-    }
+        private bool isRolling;
+        private float rollTimer;
+        private float rollDirection;
+        private float cooldownTimer;
+        private Vector3 baseScale;
 
-    private void Update()
-    {
-        float deltaTime = Time.deltaTime;
-
-        TickCooldown(deltaTime);
-
-        if (isRolling)
+        public bool IsRolling
         {
-            AdvanceRoll(deltaTime);
-            return;
+            get { return isRolling; }
         }
 
-        TryStartRoll();
-    }
-
-    private void TickCooldown(float deltaTime)
-    {
-        if (cooldownTimer <= 0f)
+        public bool IsInvulnerable
         {
-            return;
+            get { return isRolling; }
         }
 
-        cooldownTimer = cooldownTimer - deltaTime;
-    }
-
-    private void TryStartRoll()
-    {
-        float direction = planeInput.ConsumeDoubleTap();
-
-        if (Mathf.Approximately(direction, 0f))
+        public bool IsReady
         {
-            return;
+            get { return cooldownTimer <= 0f; }
         }
 
-        if (IsReady == false)
+        public float CooldownNormalized
         {
-            return;
+            get { return 1f - Mathf.Clamp01(cooldownTimer / cooldown); }
+        }
+        private void Awake()
+        {
+            baseScale = visual.localScale;
         }
 
-        isRolling = true;
-        AudioSignals.Play(GameSound.Dodge);
-        rollTimer = 0f;
-        rollDirection = direction;
-    }
-
-    private void AdvanceRoll(float deltaTime)
-    {
-        rollTimer = rollTimer + deltaTime;
-
-        UpdateRollVisual();
-
-        if (rollTimer < rollDuration)
+        private void Update()
         {
-            return;
+            float deltaTime = Time.deltaTime;
+
+            TickCooldown(deltaTime);
+
+            if (isRolling)
+            {
+                AdvanceRoll(deltaTime);
+                return;
+            }
+
+            TryStartRoll();
         }
 
-        EndRoll();
-    }
+        private void TickCooldown(float deltaTime)
+        {
+            if (cooldownTimer <= 0f)
+            {
+                return;
+            }
 
-    private void UpdateRollVisual()
-    {
-        float progress = rollTimer / rollDuration;
+            cooldownTimer = cooldownTimer - deltaTime;
+        }
 
-        Vector3 scale = baseScale;
-        scale.y = baseScale.y * Mathf.Cos(progress * 360f * Mathf.Deg2Rad);
-        visual.localScale = scale;
+        private void TryStartRoll()
+        {
+            float direction = planeInput.ConsumeDoubleTap();
 
-        float bank = Mathf.Sin(progress * 180f * Mathf.Deg2Rad) * rollBankAngle;
-        visual.localRotation = Quaternion.Euler(0f, 0f, rollDirection * bank);
-    }
+            if (Mathf.Approximately(direction, 0f))
+            {
+                return;
+            }
 
-    private void EndRoll()
-    {
-        isRolling = false;
-        visual.localScale = baseScale;
-        visual.localRotation = Quaternion.identity;
-        cooldownTimer = cooldown;
+            if (IsReady == false)
+            {
+                return;
+            }
+
+            isRolling = true;
+            AudioSignals.Play(GameSound.Dodge);
+            rollTimer = 0f;
+            rollDirection = direction;
+        }
+
+        private void AdvanceRoll(float deltaTime)
+        {
+            rollTimer = rollTimer + deltaTime;
+
+            UpdateRollVisual();
+
+            if (rollTimer < rollDuration)
+            {
+                return;
+            }
+
+            EndRoll();
+        }
+
+        private void UpdateRollVisual()
+        {
+            float progress = rollTimer / rollDuration;
+
+            Vector3 scale = baseScale;
+            scale.y = baseScale.y * Mathf.Cos(progress * 360f * Mathf.Deg2Rad);
+            visual.localScale = scale;
+
+            float bank = Mathf.Sin(progress * 180f * Mathf.Deg2Rad) * rollBankAngle;
+            visual.localRotation = Quaternion.Euler(0f, 0f, rollDirection * bank);
+        }
+
+        private void EndRoll()
+        {
+            isRolling = false;
+            visual.localScale = baseScale;
+            visual.localRotation = Quaternion.identity;
+            cooldownTimer = cooldown;
+        }
     }
 }

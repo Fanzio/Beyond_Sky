@@ -1,56 +1,60 @@
+// Conserva nomi, immagini e prezzi delle skin disponibili.
 using UnityEngine;
 
-[System.Serializable]
-public class SkinEntry
+namespace BeyondSky.Shop
 {
-    [SerializeField] private string displayName;
-    [SerializeField] private Sprite sprite;
-    [SerializeField] private int price;
-
-    public string DisplayName
+    [System.Serializable]
+    public class SkinEntry
     {
-        get { return displayName; }
-    }
+        [SerializeField] private string displayName;
+        [SerializeField] private Sprite sprite;
+        [SerializeField] private int price;
 
-    public Sprite Sprite
-    {
-        get { return sprite; }
-    }
-
-    public int Price
-    {
-        get { return Mathf.Max(0, price); }
-    }
-}
-
-public class SkinDatabase : MonoBehaviour
-{
-    [SerializeField] private SkinEntry[] skins;
-
-    public int Count
-    {
-        get
+        public string DisplayName
         {
-            if (skins == null)
+            get { return displayName; }
+        }
+
+        public Sprite Sprite
+        {
+            get { return sprite; }
+        }
+
+        public int Price
+        {
+            get { return Mathf.Max(0, price); }
+        }
+    }
+
+    public class SkinDatabase : MonoBehaviour
+    {
+        [SerializeField] private SkinEntry[] skins;
+
+        public int Count
+        {
+            get
             {
-                return 0;
+                if (skins == null)
+                {
+                    return 0;
+                }
+                return skins.Length;
             }
-            return skins.Length;
         }
-    }
 
-    public SkinEntry GetSkin(int index)
-    {
-        if (index < 0 || index >= Count)
+        public SkinEntry GetSkin(int index)
         {
-            return null;
+            if (index < 0 || index >= Count)
+            {
+                return null;
+            }
+            return skins[index];
         }
-        return skins[index];
-    }
 
-    public bool IsAvailable(int index)
-    {
-        SkinEntry entry = GetSkin(index);
-        return entry != null && entry.Sprite != null;
+        public bool IsAvailable(int index)
+        {
+            SkinEntry entry = GetSkin(index);
+            return entry != null && entry.Sprite != null;
+        }
     }
 }

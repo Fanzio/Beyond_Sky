@@ -1,283 +1,316 @@
+// Riproduce musica ed effetti, riutilizzando le sorgenti e gestendo le pause.
 using System.Collections.Generic;
 using UnityEngine;
+using BeyondSky.Systems;
+using BeyondSky.UI;
 
-public class GameAudio : MonoBehaviour
+namespace BeyondSky.Audio
 {
-    [Header("Scene references")]
-    [SerializeField] private GameManager gameManager;
-    [SerializeField] private SpeedManager speedManager;
-    [SerializeField] private AudioSource musicSource;
-    [SerializeField] private AudioSource engineSource;
-    [SerializeField] private AudioSource windSource;
-    [SerializeField] private AudioSource laserSource;
-
-    [Header("Effects")]
-    [SerializeField] private AudioCue[] cues;
-    [SerializeField] private AudioSource[] worldVoices;
-    [SerializeField] private AudioSource[] interfaceVoices;
-
-    [Header("Engine pitch")]
-    [SerializeField] private float speedForMaxEnginePitch = 50f;
-
-    [Header("Results")]
-    [SerializeField] private float gameOverJingleDelay = 0.40f;
-
-    private float[] lastPlayed;
-    private List<Component> activeLasers = new List<Component>(8);
-    private bool gameOverHandled;
-    private bool background;
-    private bool laserRunning;
-    private float jingleTimer = -1f;
-
-    private void Awake()
+    public class GameAudio : MonoBehaviour
     {
-        AudioListener.pause = false;
-        lastPlayed = new float[cues.Length];
-        for (int i = 0; i < lastPlayed.Length; i++)
-        {
-            lastPlayed[i] = -100f;
-        }
-        for (int i = 0; i < interfaceVoices.Length; i++)
-        {
-            interfaceVoices[i].ignoreListenerPause = true;
-        }
-    }
+        [Header("Scene references")]
+        [SerializeField] private GameManager gameManager;
+        [SerializeField] private SpeedManager speedManager;
+        [SerializeField] private AudioSource musicSource;
+        [SerializeField] private AudioSource engineSource;
+        [SerializeField] private AudioSource windSource;
+        [SerializeField] private AudioSource laserSource;
 
-    private void OnEnable()
-    {
-        AudioSignals.SoundRequested += PlaySound;
-        AudioSignals.CloseCallRequested += PlayCloseCall;
-        AudioSignals.LaserChanged += SetLaser;
-    }
+        [Header("Effects")]
+        [SerializeField] private AudioCue[] cues;
+        [SerializeField] private AudioSource[] worldVoices;
+        [SerializeField] private AudioSource[] interfaceVoices;
 
-    private void Start()
-    {
-        if (musicSource.clip != null)
-        {
-            musicSource.Play();
-        }
-        if (gameManager != null)
-        {
-            engineSource.Play();
-            windSource.Play();
-        }
-    }
+        [Header("Engine pitch")]
+        [SerializeField] private float speedForMaxEnginePitch = 50f;
 
-    private void LateUpdate()
-    {
-        AudioListener.pause = background || Time.timeScale == 0f;
-        if (gameManager != null && gameManager.IsGameOver && gameOverHandled == false)
+        [Header("Results")]
+        [SerializeField] private float gameOverJingleDelay = 0.40f;
+
+        private float[] lastPlayed;
+        private List<Component> activeLasers = new List<Component>(8);
+        private bool gameOverHandled;
+        private bool background;
+        private bool applicationPaused;
+        private bool applicationFocused = true;
+        private UIAudioChannel musicChannel;
+        private bool laserRunning;
+        private float jingleTimer = -1f;
+
+        private void Awake()
         {
-            gameOverHandled = true;
-            StopWorld();
-            PlaySound(GameSound.PlayerCrash);
-            jingleTimer = gameOverJingleDelay;
-        }
-        if (background)
-        {
-            return;
-        }
-        if (jingleTimer >= 0f)
-        {
-            jingleTimer = jingleTimer - Time.unscaledDeltaTime;
-            if (jingleTimer <= 0f)
+            AudioListener.pause = false;
+            musicSource.ignoreListenerPause = true;
+            musicChannel = musicSource.GetComponent<UIAudioChannel>();
+            lastPlayed = new float[cues.Length];
+            for (int i = 0; i < lastPlayed.Length; i++)
             {
-                jingleTimer = -1f;
-                PlaySound(GameSound.GameOverJingle);
+                lastPlayed[i] = -100f;
+            }
+            for (int i = 0; i < interfaceVoices.Length; i++)
+            {
+                interfaceVoices[i].ignoreListenerPause = true;
             }
         }
-        if (gameOverHandled || Time.timeScale == 0f)
-        {
-            return;
-        }
-        UpdateLaserLoop();
-        if (gameManager != null && speedManager != null)
-        {
-            float progress = Mathf.Clamp01(speedManager.CurrentSpeed / Mathf.Max(1f, speedForMaxEnginePitch));
-            engineSource.pitch = Mathf.Lerp(0.85f, 1.4f, progress);
-        }
-    }
 
-    private bool IsInterfaceSound(GameSound sound)
-    {
-        return sound == GameSound.UIClick || sound == GameSound.UIPanelOpen ||
-            sound == GameSound.PlayerCrash || sound == GameSound.GameOverJingle ||
-            sound == GameSound.SpaceReached;
-    }
-
-    private void PlaySound(GameSound sound)
-    {
-        PlayCue(sound, 0f);
-    }
-
-    private void PlayCloseCall(int progress, int required)
-    {
-        float fraction = 1f;
-        if (required > 1)
+        private void OnEnable()
         {
-            fraction = Mathf.Clamp01((float)(progress - 1) / (required - 1));
+            AudioSignals.SoundRequested += PlaySound;
+            AudioSignals.CloseCallRequested += PlayCloseCall;
+            AudioSignals.LaserChanged += SetLaser;
         }
-        float pitch = Mathf.Pow(2f, fraction * 4f / 12f);
-        PlayCue(GameSound.CloseCall, pitch);
-    }
 
-    private void PlayCue(GameSound sound, float fixedPitch)
-    {
-        if (background)
+        private void Start()
         {
-            return;
+            if (musicSource.clip != null)
+            {
+                musicSource.Play();
+            }
+            if (gameManager != null)
+            {
+                engineSource.Play();
+                windSource.Play();
+            }
         }
-        bool interfaceSound = IsInterfaceSound(sound);
-        if (interfaceSound == false)
+
+        private void LateUpdate()
         {
-            if (Time.timeScale == 0f || gameOverHandled)
+            AudioListener.pause = background || Time.timeScale == 0f;
+            float musicGain = 1f;
+            if (gameManager != null && Time.timeScale == 0f)
+            {
+                musicGain = 0.45f;
+            }
+            if (musicChannel != null)
+            {
+                musicChannel.SetPlaybackGain(musicGain);
+            }
+            if (gameManager != null && gameManager.IsGameOver && gameOverHandled == false)
+            {
+                gameOverHandled = true;
+                StopWorld();
+                PlaySound(GameSound.PlayerCrash);
+                jingleTimer = gameOverJingleDelay;
+            }
+            if (background)
             {
                 return;
             }
-            if (gameManager != null && gameManager.IsGameOver)
+            if (jingleTimer >= 0f)
             {
-                return;
-            }
-        }
-        for (int i = 0; i < cues.Length; i++)
-        {
-            AudioCue cue = cues[i];
-            if (cue.Sound != sound || cue.Clip == null)
-            {
-                continue;
-            }
-            if (Time.unscaledTime - lastPlayed[i] < cue.MinimumInterval)
-            {
-                return;
-            }
-            AudioSource[] bank = worldVoices;
-            if (interfaceSound)
-            {
-                bank = interfaceVoices;
-            }
-            AudioSource voice = GetVoice(bank, cue.Priority);
-            if (voice == null)
-            {
-                return;
-            }
-            lastPlayed[i] = Time.unscaledTime;
-            voice.Stop();
-            voice.priority = cue.Priority;
-            voice.pitch = 1f;
-            if (fixedPitch > 0f)
-            {
-                voice.pitch = fixedPitch;
-            }
-            else if (cue.VaryPitch)
-            {
-                voice.pitch = Random.Range(0.95f, 1.05f);
-            }
-            voice.PlayOneShot(cue.Clip, cue.Gain);
-            return;
-        }
-    }
-
-    private AudioSource GetVoice(AudioSource[] bank, int priority)
-    {
-        AudioSource candidate = null;
-        for (int i = 0; i < bank.Length; i++)
-        {
-            if (bank[i].isPlaying == false)
-            {
-                return bank[i];
-            }
-            if (bank[i].priority >= priority)
-            {
-                if (candidate == null || bank[i].priority > candidate.priority)
+                jingleTimer = jingleTimer - Time.unscaledDeltaTime;
+                if (jingleTimer <= 0f)
                 {
-                    candidate = bank[i];
+                    jingleTimer = -1f;
+                    PlaySound(GameSound.GameOverJingle);
                 }
             }
-        }
-        return candidate;
-    }
-
-    private void SetLaser(Component owner, bool active)
-    {
-        if (owner == null)
-        {
-            return;
-        }
-        if (active)
-        {
-            if (activeLasers.Contains(owner) == false && gameOverHandled == false)
+            if (gameOverHandled || Time.timeScale == 0f)
             {
-                activeLasers.Add(owner);
+                return;
+            }
+            UpdateLaserLoop();
+            if (gameManager != null && speedManager != null)
+            {
+                float progress = Mathf.Clamp01(speedManager.CurrentSpeed / Mathf.Max(1f, speedForMaxEnginePitch));
+                engineSource.pitch = Mathf.Lerp(0.85f, 1.4f, progress);
             }
         }
-        else
-        {
-            activeLasers.Remove(owner);
-        }
-    }
 
-    private void UpdateLaserLoop()
-    {
-        for (int i = activeLasers.Count - 1; i >= 0; i--)
+        private bool IsInterfaceSound(GameSound sound)
         {
-            if (activeLasers[i] == null || activeLasers[i].gameObject.activeInHierarchy == false)
+            return sound == GameSound.UIClick || sound == GameSound.UIPanelOpen ||
+                sound == GameSound.PlayerCrash || sound == GameSound.GameOverJingle ||
+                sound == GameSound.SpaceReached;
+        }
+
+        private void PlaySound(GameSound sound)
+        {
+            PlayCue(sound, 0f);
+        }
+
+        private void PlayCloseCall(int progress, int required)
+        {
+            float fraction = 1f;
+            if (required > 1)
             {
-                activeLasers.RemoveAt(i);
+                fraction = Mathf.Clamp01((float)(progress - 1) / (required - 1));
+            }
+            float pitch = Mathf.Pow(2f, fraction * 4f / 12f);
+            PlayCue(GameSound.CloseCall, pitch);
+        }
+
+        private void PlayCue(GameSound sound, float fixedPitch)
+        {
+            if (background)
+            {
+                return;
+            }
+            bool interfaceSound = IsInterfaceSound(sound);
+            if (interfaceSound == false)
+            {
+                if (Time.timeScale == 0f || gameOverHandled)
+                {
+                    return;
+                }
+                if (gameManager != null && gameManager.IsGameOver)
+                {
+                    return;
+                }
+            }
+            for (int i = 0; i < cues.Length; i++)
+            {
+                AudioCue cue = cues[i];
+                if (cue.Sound != sound || cue.Clip == null)
+                {
+                    continue;
+                }
+                if (Time.unscaledTime - lastPlayed[i] < cue.MinimumInterval)
+                {
+                    return;
+                }
+                AudioSource[] bank = worldVoices;
+                if (interfaceSound)
+                {
+                    bank = interfaceVoices;
+                }
+                AudioSource voice = GetVoice(bank, cue.Priority);
+                if (voice == null)
+                {
+                    return;
+                }
+                lastPlayed[i] = Time.unscaledTime;
+                voice.Stop();
+                voice.priority = cue.Priority;
+                voice.pitch = 1f;
+                if (fixedPitch > 0f)
+                {
+                    voice.pitch = fixedPitch;
+                }
+                else if (cue.VaryPitch)
+                {
+                    voice.pitch = Random.Range(0.95f, 1.05f);
+                }
+                voice.PlayOneShot(cue.Clip, cue.Gain);
+                return;
             }
         }
-        bool shouldPlay = activeLasers.Count > 0;
-        if (shouldPlay == laserRunning)
-        {
-            return;
-        }
-        laserRunning = shouldPlay;
-        if (shouldPlay)
-        {
-            laserSource.Play();
-        }
-        else
-        {
-            laserSource.Stop();
-        }
-    }
 
-    private void StopWorld()
-    {
-        musicSource.Stop();
-        if (engineSource != null)
+        private AudioSource GetVoice(AudioSource[] bank, int priority)
         {
-            engineSource.Stop();
-            windSource.Stop();
-            laserSource.Stop();
+            AudioSource candidate = null;
+            for (int i = 0; i < bank.Length; i++)
+            {
+                if (bank[i].isPlaying == false)
+                {
+                    return bank[i];
+                }
+                if (bank[i].priority >= priority)
+                {
+                    if (candidate == null || bank[i].priority > candidate.priority)
+                    {
+                        candidate = bank[i];
+                    }
+                }
+            }
+            return candidate;
         }
-        for (int i = 0; i < worldVoices.Length; i++)
-        {
-            worldVoices[i].Stop();
-        }
-        activeLasers.Clear();
-        laserRunning = false;
-    }
 
-    private void OnApplicationPause(bool paused)
-    {
-        background = paused;
-        for (int i = 0; i < interfaceVoices.Length; i++)
+        private void SetLaser(Component owner, bool active)
         {
-            interfaceVoices[i].ignoreListenerPause = paused == false;
+            if (owner == null)
+            {
+                return;
+            }
+            if (active)
+            {
+                if (activeLasers.Contains(owner) == false && gameOverHandled == false)
+                {
+                    activeLasers.Add(owner);
+                }
+            }
+            else
+            {
+                activeLasers.Remove(owner);
+            }
         }
-        AudioListener.pause = background || Time.timeScale == 0f;
-    }
 
-    private void OnDisable()
-    {
-        AudioSignals.SoundRequested -= PlaySound;
-        AudioSignals.CloseCallRequested -= PlayCloseCall;
-        AudioSignals.LaserChanged -= SetLaser;
-        StopWorld();
-        for (int i = 0; i < interfaceVoices.Length; i++)
+        private void UpdateLaserLoop()
         {
-            interfaceVoices[i].Stop();
+            for (int i = activeLasers.Count - 1; i >= 0; i--)
+            {
+                if (activeLasers[i] == null || activeLasers[i].gameObject.activeInHierarchy == false)
+                {
+                    activeLasers.RemoveAt(i);
+                }
+            }
+            bool shouldPlay = activeLasers.Count > 0;
+            if (shouldPlay == laserRunning)
+            {
+                return;
+            }
+            laserRunning = shouldPlay;
+            if (shouldPlay)
+            {
+                laserSource.Play();
+            }
+            else
+            {
+                laserSource.Stop();
+            }
         }
-        AudioListener.pause = false;
+
+        private void StopWorld()
+        {
+            musicSource.Stop();
+            if (engineSource != null)
+            {
+                engineSource.Stop();
+                windSource.Stop();
+                laserSource.Stop();
+            }
+            for (int i = 0; i < worldVoices.Length; i++)
+            {
+                worldVoices[i].Stop();
+            }
+            activeLasers.Clear();
+            laserRunning = false;
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            applicationPaused = paused;
+            UpdateBackgroundAudio();
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            applicationFocused = focused;
+            UpdateBackgroundAudio();
+        }
+
+        private void UpdateBackgroundAudio()
+        {
+            background = applicationPaused || !applicationFocused;
+            musicSource.ignoreListenerPause = !background;
+            for (int i = 0; i < interfaceVoices.Length; i++)
+            {
+                interfaceVoices[i].ignoreListenerPause = !background;
+            }
+            AudioListener.pause = background || Time.timeScale == 0f;
+        }
+
+        private void OnDisable()
+        {
+            AudioSignals.SoundRequested -= PlaySound;
+            AudioSignals.CloseCallRequested -= PlayCloseCall;
+            AudioSignals.LaserChanged -= SetLaser;
+            StopWorld();
+            for (int i = 0; i < interfaceVoices.Length; i++)
+            {
+                interfaceVoices[i].Stop();
+            }
+            AudioListener.pause = false;
+        }
     }
 }

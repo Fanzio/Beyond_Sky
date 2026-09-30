@@ -1,36 +1,39 @@
+// Muove un ostacolo lungo la sua traiettoria e ne ripristina la posizione.
 using UnityEngine;
 
-
-public class MovingObstacle : MonoBehaviour
+namespace BeyondSky.Obstacles
 {
-    [Header("Drift - negative comes at the player")]
-    [Range(-6f, 12f)]
-    [SerializeField] private float horizontalSpeed = -5f;
-
-    private Vector3 startLocalPosition;
-    private bool hasCaptured;
-
-    public void CaptureStart()
+    public class MovingObstacle : MonoBehaviour
     {
-        if (hasCaptured)
+        [Header("Drift - negative comes at the player")]
+        [Range(-6f, 12f)]
+        [SerializeField] private float horizontalSpeed = -5f;
+
+        private Vector3 startLocalPosition;
+        private bool hasCaptured;
+
+        public void CaptureStart()
         {
-            return;
+            if (hasCaptured)
+            {
+                return;
+            }
+
+            startLocalPosition = transform.localPosition;
+            hasCaptured = true;
         }
 
-        startLocalPosition = transform.localPosition;
-        hasCaptured = true;
-    }
+        public void ResetPosition()
+        {
+            CaptureStart();
+            transform.localPosition = startLocalPosition;
+        }
 
-    public void ResetPosition()
-    {
-        CaptureStart();
-        transform.localPosition = startLocalPosition;
-    }
-
-    private void Update()
-    {
-        Vector3 position = transform.localPosition;
-        position.x = position.x + horizontalSpeed * Time.deltaTime;
-        transform.localPosition = position;
+        private void Update()
+        {
+            Vector3 position = transform.localPosition;
+            position.x = position.x + horizontalSpeed * Time.deltaTime;
+            transform.localPosition = position;
+        }
     }
 }

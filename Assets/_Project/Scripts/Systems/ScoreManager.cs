@@ -1,71 +1,87 @@
+// Calcola punti e monete della run e ne salva i risultati una sola volta.
 using UnityEngine;
+using BeyondSky.Audio;
+using BeyondSky.World;
 
-public class ScoreManager : MonoBehaviour
+namespace BeyondSky.Systems
 {
-    private const string BestScoreKey = "BestScore";
-    private const string CoinsKey = "Coins";
-
-    [Header("References")]
-    [SerializeField] private WorldScroller worldScroller;
-    [SerializeField] private FloorManager floorManager;
-
-    [Header("Scoring")]
-    [SerializeField] private float pointsPerUnit = 1f;
-
-    private float score;
-    private float lastDistance;
-    private int runCoins;
-
-    public int Score
+    public class ScoreManager : MonoBehaviour
     {
-        get { return Mathf.FloorToInt(score); }
-    }
+        private const string BestScoreKey = "BestScore";
+        private const string CoinsKey = "Coins";
 
-    public int BestScore
-    {
-        get { return PlayerPrefs.GetInt(BestScoreKey, 0); }
-    }
+        [Header("References")]
+        [SerializeField] private WorldScroller worldScroller;
+        [SerializeField] private FloorManager floorManager;
 
-    public int RunCoins
-    {
-        get { return runCoins; }
-    }
+        [Header("Scoring")]
+        [SerializeField] private float pointsPerUnit = 1f;
+        [SerializeField] private int pointsPerCoin = 5;
 
-    public int TotalCoins
-    {
-        get { return PlayerPrefs.GetInt(CoinsKey, 0); }
-    }
+        private float score;
+        private float lastDistance;
+        private int runCoins;
+        private bool resultsSaved;
 
-    public void AddCoin(int amount)
-    {
-        runCoins = runCoins + amount * floorManager.CoinMultiplier;
-        AudioSignals.Play(GameSound.Coin);
-    }
-
-    public void SaveCoins()
-    {
-        PlayerPrefs.SetInt(CoinsKey, TotalCoins + runCoins);
-        PlayerPrefs.Save();
-    }
-
-    public bool SaveIfBest()
-    {
-        if (Score <= BestScore)
+        public int Score
         {
-            return false;
+            get { return Mathf.FloorToInt(score); }
         }
 
-        PlayerPrefs.SetInt(BestScoreKey, Score);
-        PlayerPrefs.Save();
-        return true;
-    }
+        public int BestScore
+        {
+            get { return PlayerPrefs.GetInt(BestScoreKey, 0); }
+        }
 
-    private void Update()
-    {
-        float currentDistance = worldScroller.DistanceTravelled;
-        float distanceTravelledThisFrame = currentDistance - lastDistance;
-        lastDistance = currentDistance;
+        public int RunCoins
+        {
+            get { return runCoins; }
+        }
 
-        score = score + distanceTravelledThisFrame * pointsPerUnit;
+        public int TotalCoins
+        {
+            get { return PlayerPrefs.GetInt(CoinsKey, 0); }
+        }
+
+        public void AddCoin(int amount)
+        {
+            int earnedCoins = amount * floorManager.CoinMultiplier;
+            runCoins = runCoins + earnedCoins;
+            score = score + earnedCoins * pointsPerCoin;
+            AudioSignals.Play(GameSound.Coin);
+        }
+
+        public bool SaveRunResults()
+        {
+            if (resultsSaved)
+            {
+                return false;
+            }
+
+            UpdateScore();
+            resultsSaved = true;
+            bool newRecord = Score > BestScore;
+            if (newRecord)
+            {
+                PlayerPrefs.SetInt(BestScoreKey, Score);
+            }
+            PlayerPrefs.SetInt(CoinsKey, TotalCoins + runCoins);
+            PlayerPrefs.Save();
+            return newRecord;
+        }
+
+        private void Update()
+        {
+            UpdateScore();
+        }
+
+        private void UpdateScore()
+        {
+            float currentDistance = worldScroller.DistanceTravelled;
+            float distanceTravelledThisFrame = currentDistance - lastDistance;
+            lastDistance = currentDistance;
+
+            score = score + distanceTravelledThisFrame * pointsPerUnit;
+        }
     }
 }

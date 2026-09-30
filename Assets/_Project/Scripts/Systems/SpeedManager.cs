@@ -1,43 +1,47 @@
+// Aumenta gradualmente la velocità di scorrimento verso il limite massimo.
 using UnityEngine;
 
-public class SpeedManager : MonoBehaviour
+namespace BeyondSky.Systems
 {
-    [Header("Ramp")]
-    [SerializeField] private float startSpeed = 16f;
-    [SerializeField] private float maxSpeed = 36f;
-    [SerializeField] private float rampRate = 0.035f;
-
-    private float currentSpeed;
-
-    public float CurrentSpeed
+    public class SpeedManager : MonoBehaviour
     {
-        get { return currentSpeed; }
-    }
+        [Header("Ramp")]
+        [SerializeField] private float startSpeed = 16f;
+        [SerializeField] private float maxSpeed = 36f;
+        [SerializeField] private float rampRate = 0.035f;
 
-    public float NormalizedSpeed
-    {
-        get { return Mathf.InverseLerp(startSpeed, maxSpeed, currentSpeed); }
-    }
+        private float currentSpeed;
 
-    private void Awake()
-    {
-        currentSpeed = startSpeed;
-    }
-
-    private void Update()
-    {
-        ApplyRamp(Time.deltaTime);
-    }
-
-    private void ApplyRamp(float deltaTime)
-    {
-        float remainingSpeed = maxSpeed - currentSpeed;
-
-        if (remainingSpeed <= 0f)
+        public float CurrentSpeed
         {
-            return;
+            get { return currentSpeed; }
         }
 
-        currentSpeed = currentSpeed + remainingSpeed * rampRate * deltaTime;
+        public float NormalizedSpeed
+        {
+            get { return Mathf.InverseLerp(startSpeed, maxSpeed, currentSpeed); }
+        }
+
+        private void Awake()
+        {
+            currentSpeed = startSpeed;
+        }
+
+        private void Update()
+        {
+            ApplyRamp(Time.deltaTime);
+        }
+
+        private void ApplyRamp(float deltaTime)
+        {
+            float remainingSpeed = maxSpeed - currentSpeed;
+
+            if (remainingSpeed <= 0f)
+            {
+                return;
+            }
+
+            currentSpeed = currentSpeed + remainingSpeed * rampRate * deltaTime;
+        }
     }
 }

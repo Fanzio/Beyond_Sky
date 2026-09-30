@@ -1,62 +1,66 @@
+// Conserva i parametri di riproduzione di un effetto sonoro.
 using UnityEngine;
 
-[System.Serializable]
-public class AudioCue
+namespace BeyondSky.Audio
 {
-    [SerializeField] private GameSound sound;
-    [SerializeField] private AudioClip clip;
-    [Range(0f, 1f)]
-    [SerializeField] private float gain = 1f;
-    [SerializeField] private float minimumInterval = 0.04f;
-    [SerializeField] private bool varyPitch = true;
-    [Range(0, 256)]
-    [SerializeField] private int priority = 128;
-
-    public GameSound Sound
+    [System.Serializable]
+    public class AudioCue
     {
-        get
+        [SerializeField] private GameSound sound;
+        [SerializeField] private AudioClip clip;
+        [Range(0f, 1f)]
+        [SerializeField] private float gain = 1f;
+        [SerializeField] private float minimumInterval = 0.04f;
+        [SerializeField] private bool varyPitch = true;
+        [Range(0, 256)]
+        [SerializeField] private int priority = 128;
+
+        public GameSound Sound
         {
-            return sound;
+            get
+            {
+                return sound;
+            }
         }
-    }
 
-    public AudioClip Clip
-    {
-        get
+        public AudioClip Clip
         {
-            return clip;
+            get
+            {
+                return clip;
+            }
         }
-    }
 
-    public float Gain
-    {
-        get
+        public float Gain
         {
-            return gain;
+            get
+            {
+                return gain;
+            }
         }
-    }
 
-    public float MinimumInterval
-    {
-        get
+        public float MinimumInterval
         {
-            return minimumInterval;
+            get
+            {
+                return minimumInterval;
+            }
         }
-    }
 
-    public bool VaryPitch
-    {
-        get
+        public bool VaryPitch
         {
-            return varyPitch;
+            get
+            {
+                return varyPitch;
+            }
         }
-    }
 
-    public int Priority
-    {
-        get
+        public int Priority
         {
-            return priority;
+            get
+            {
+                return priority;
+            }
         }
     }
 }

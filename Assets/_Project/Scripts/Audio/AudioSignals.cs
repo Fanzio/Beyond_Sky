@@ -1,58 +1,62 @@
+// Trasmette le richieste di suoni e di attivazione dei laser al sistema audio.
 using System;
 using UnityEngine;
 
-public enum GameSound
+namespace BeyondSky.Audio
 {
-    PlayerShot,
-    CloseCall,
-    AmmoPickup,
-    Dodge,
-    Coin,
-    EnemyWarning,
-    ShieldPickup,
-    ShieldBreak,
-    PlayerCrash,
-    EnemyShot,
-    ObstacleDestroyed,
-    EnemyDestroyed,
-    Explosion,
-    Ascension,
-    BossIncoming,
-    BossDefeated,
-    BossHit,
-    UIClick,
-    UIPanelOpen,
-    GameOverJingle,
-    SpaceReached
-}
-
-public static class AudioSignals
-{
-    public static event Action<GameSound> SoundRequested;
-    public static event Action<int, int> CloseCallRequested;
-    public static event Action<Component, bool> LaserChanged;
-
-    public static void Play(GameSound sound)
+    public enum GameSound
     {
-        if (SoundRequested != null)
-        {
-            SoundRequested.Invoke(sound);
-        }
+        PlayerShot,
+        CloseCall,
+        AmmoPickup,
+        Dodge,
+        Coin,
+        EnemyWarning,
+        ShieldPickup,
+        ShieldBreak,
+        PlayerCrash,
+        EnemyShot,
+        ObstacleDestroyed,
+        EnemyDestroyed,
+        Explosion,
+        Ascension,
+        BossIncoming,
+        BossDefeated,
+        BossHit,
+        UIClick,
+        UIPanelOpen,
+        GameOverJingle,
+        SpaceReached
     }
 
-    public static void PlayCloseCall(int progress, int required)
+    public static class AudioSignals
     {
-        if (CloseCallRequested != null)
-        {
-            CloseCallRequested.Invoke(progress, required);
-        }
-    }
+        public static event Action<GameSound> SoundRequested;
+        public static event Action<int, int> CloseCallRequested;
+        public static event Action<Component, bool> LaserChanged;
 
-    public static void SetLaser(Component owner, bool active)
-    {
-        if (LaserChanged != null)
+        public static void Play(GameSound sound)
         {
-            LaserChanged.Invoke(owner, active);
+            if (SoundRequested != null)
+            {
+                SoundRequested.Invoke(sound);
+            }
+        }
+
+        public static void PlayCloseCall(int progress, int required)
+        {
+            if (CloseCallRequested != null)
+            {
+                CloseCallRequested.Invoke(progress, required);
+            }
+        }
+
+        public static void SetLaser(Component owner, bool active)
+        {
+            if (LaserChanged != null)
+            {
+                LaserChanged.Invoke(owner, active);
+            }
         }
     }
 }

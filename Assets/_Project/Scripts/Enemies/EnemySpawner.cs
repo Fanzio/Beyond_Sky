@@ -1,328 +1,335 @@
+// Gestisce pool e comparsa dei nemici in base al piano e ai limiti attivi.
 using System.Collections.Generic;
 using UnityEngine;
+using BeyondSky.Boss;
+using BeyondSky.Systems;
+using BeyondSky.World;
 
-[System.Serializable]
-public class EnemyEntry
+namespace BeyondSky.Enemies
 {
-    [SerializeField] private EnemyBase prefab;
-
-    [Header("Floors this enemy appears on - 0 city, 1 sky, 2 space")]
-    [SerializeField] private int[] floors;
-
-    [SerializeField] private int poolSize = 3;
-
-    [Header("Leave empty to use the spawner's default pool")]
-    [SerializeField] private BulletPool bulletPool;
-
-    [Header("Optional support pools for special enemies")]
-    [SerializeField] private ExplosiveMissilePool explosiveMissilePool;
-    [SerializeField] private AerialMinePool aerialMinePool;
-
-    public EnemyBase Prefab
+    [System.Serializable]
+    public class EnemyEntry
     {
-        get { return prefab; }
-    }
+        [SerializeField] private EnemyBase prefab;
 
-    public int[] Floors
-    {
-        get { return floors; }
-    }
+        [Header("Floors this enemy appears on - 0 city, 1 sky, 2 space")]
+        [SerializeField] private int[] floors;
 
-    public int PoolSize
-    {
-        get { return poolSize; }
-    }
+        [SerializeField] private int poolSize = 3;
 
-    public BulletPool BulletPool
-    {
-        get { return bulletPool; }
-    }
+        [Header("Leave empty to use the spawner's default pool")]
+        [SerializeField] private BulletPool bulletPool;
 
-    public ExplosiveMissilePool ExplosiveMissilePool
-    {
-        get { return explosiveMissilePool; }
-    }
+        [Header("Optional support pools for special enemies")]
+        [SerializeField] private ExplosiveMissilePool explosiveMissilePool;
+        [SerializeField] private AerialMinePool aerialMinePool;
 
-    public AerialMinePool AerialMinePool
-    {
-        get { return aerialMinePool; }
-    }
-}
-
-public class EnemySpawner : MonoBehaviour
-{
-    [Header("References")]
-    [SerializeField] private Transform player;
-    [SerializeField] private BulletPool defaultBulletPool;
-    [SerializeField] private WorldScroller worldScroller;
-    [SerializeField] private FloorManager floorManager;
-    [SerializeField] private GameManager gameManager;
-    [SerializeField] private BossManager bossManager;
-
-    [Header("Roster")]
-    [SerializeField] private EnemyEntry[] entries;
-
-    [Header("Limits - one entry per floor, 0 city, 1 sky, 2 space")]
-    [SerializeField] private int[] maxActivePerFloor = new int[] { 2, 3, 3 };
-
-    [Header("Timing")]
-    [SerializeField] private float firstSpawnDistance = 500f;
-    [SerializeField] private float minInterval = 6f;
-    [SerializeField] private float maxInterval = 11f;
-
-    [Header("Spawn position")]
-    [SerializeField] private float spawnX = 26f;
-    [SerializeField] private float minY = 12f;
-    [SerializeField] private float maxY = 28f;
-    [SerializeField] private float minOffsetFromPlayer = 5f;
-
-    private List<EnemyBase> pool = new List<EnemyBase>();
-    private List<int> poolEntryIndices = new List<int>();
-    private List<EnemyBase> availableEnemies = new List<EnemyBase>();
-    private float spawnTimer;
-
-    private void Awake()
-    {
-        for (int i = 0; i < entries.Length; i++)
+        public EnemyBase Prefab
         {
-            EnemyEntry entry = entries[i];
+            get { return prefab; }
+        }
 
-            if (entry.Prefab == null)
+        public int[] Floors
+        {
+            get { return floors; }
+        }
+
+        public int PoolSize
+        {
+            get { return poolSize; }
+        }
+
+        public BulletPool BulletPool
+        {
+            get { return bulletPool; }
+        }
+
+        public ExplosiveMissilePool ExplosiveMissilePool
+        {
+            get { return explosiveMissilePool; }
+        }
+
+        public AerialMinePool AerialMinePool
+        {
+            get { return aerialMinePool; }
+        }
+    }
+
+    public class EnemySpawner : MonoBehaviour
+    {
+        [Header("References")]
+        [SerializeField] private Transform player;
+        [SerializeField] private BulletPool defaultBulletPool;
+        [SerializeField] private WorldScroller worldScroller;
+        [SerializeField] private FloorManager floorManager;
+        [SerializeField] private GameManager gameManager;
+        [SerializeField] private BossManager bossManager;
+
+        [Header("Roster")]
+        [SerializeField] private EnemyEntry[] entries;
+
+        [Header("Limits - one entry per floor, 0 city, 1 sky, 2 space")]
+        [SerializeField] private int[] maxActivePerFloor = new int[] { 2, 3, 3 };
+
+        [Header("Timing")]
+        [SerializeField] private float firstSpawnDistance = 500f;
+        [SerializeField] private float minInterval = 6f;
+        [SerializeField] private float maxInterval = 11f;
+
+        [Header("Spawn position")]
+        [SerializeField] private float spawnX = 26f;
+        [SerializeField] private float minY = 12f;
+        [SerializeField] private float maxY = 28f;
+        [SerializeField] private float minOffsetFromPlayer = 5f;
+
+        private List<EnemyBase> pool = new List<EnemyBase>();
+        private List<int> poolEntryIndices = new List<int>();
+        private List<EnemyBase> availableEnemies = new List<EnemyBase>();
+        private float spawnTimer;
+
+        private void Awake()
+        {
+            for (int i = 0; i < entries.Length; i++)
             {
-                continue;
+                EnemyEntry entry = entries[i];
+
+                if (entry.Prefab == null)
+                {
+                    continue;
+                }
+
+                for (int copy = 0; copy < entry.PoolSize; copy++)
+                {
+                    EnemyBase enemy = Instantiate(entry.Prefab, transform);
+                    enemy.Setup(player, GetBulletPool(entry));
+                    enemy.SetupExplosiveMissilePool(entry.ExplosiveMissilePool);
+                    enemy.SetupAerialMinePool(entry.AerialMinePool);
+
+                    enemy.gameObject.SetActive(false);
+                    pool.Add(enemy);
+                    poolEntryIndices.Add(i);
+                }
             }
 
-            for (int copy = 0; copy < entry.PoolSize; copy++)
+            spawnTimer = Random.Range(minInterval, maxInterval);
+        }
+
+        private void Update()
+        {
+            if (gameManager.IsGameOver)
             {
-                EnemyBase enemy = Instantiate(entry.Prefab, transform);
-                enemy.Setup(player, GetBulletPool(entry));
-                enemy.SetupExplosiveMissilePool(entry.ExplosiveMissilePool);
-                enemy.SetupAerialMinePool(entry.AerialMinePool);
-
-                enemy.gameObject.SetActive(false);
-                pool.Add(enemy);
-                poolEntryIndices.Add(i);
+                return;
             }
+
+            if (gameManager.IsAscending)
+            {
+                return;
+            }
+
+            if (bossManager.IsArenaActive)
+            {
+                return;
+            }
+
+            if (worldScroller.IsOpeningClear)
+            {
+                return;
+            }
+
+            if (worldScroller.DistanceTravelled < firstSpawnDistance)
+            {
+                return;
+            }
+
+            spawnTimer = spawnTimer - Time.deltaTime;
+
+            if (spawnTimer > 0f)
+            {
+                return;
+            }
+
+            spawnTimer = Random.Range(minInterval, maxInterval);
+            TrySpawnRandomEnemy();
         }
 
-        spawnTimer = Random.Range(minInterval, maxInterval);
-    }
-
-    private void Update()
-    {
-        if (gameManager.IsGameOver)
+        public EnemyBase SpawnForBoss(EnemyBase requestedPrefab, Vector3 startPosition)
         {
-            return;
-        }
+            if (requestedPrefab == null)
+            {
+                return null;
+            }
 
-        if (gameManager.IsAscending)
-        {
-            return;
-        }
+            if (IsInRoster(requestedPrefab) == false)
+            {
+                Debug.LogWarning("EnemySpawner: il prefab " + requestedPrefab.name
+                    + " non e' nel roster, il summon non puo' funzionare.", this);
+                return null;
+            }
 
-        if (bossManager.IsArenaActive)
-        {
-            return;
-        }
+            for (int i = 0; i < pool.Count; i++)
+            {
+                if (pool[i].gameObject.activeSelf)
+                {
+                    continue;
+                }
 
-        if (worldScroller.IsOpeningClear)
-        {
-            return;
-        }
+                int entryIndex = poolEntryIndices[i];
 
-        if (worldScroller.DistanceTravelled < firstSpawnDistance)
-        {
-            return;
-        }
+                if (entries[entryIndex].Prefab != requestedPrefab)
+                {
+                    continue;
+                }
 
-        spawnTimer = spawnTimer - Time.deltaTime;
+                pool[i].Activate(startPosition);
+                return pool[i];
+            }
 
-        if (spawnTimer > 0f)
-        {
-            return;
-        }
-
-        spawnTimer = Random.Range(minInterval, maxInterval);
-        TrySpawnRandomEnemy();
-    }
-
-    public EnemyBase SpawnForBoss(EnemyBase requestedPrefab, Vector3 startPosition)
-    {
-        if (requestedPrefab == null)
-        {
             return null;
         }
 
-        if (IsInRoster(requestedPrefab) == false)
+        public void DespawnAllEnemies()
         {
-            Debug.LogWarning("EnemySpawner: il prefab " + requestedPrefab.name
-                + " non e' nel roster, il summon non puo' funzionare.", this);
-            return null;
-        }
-
-        for (int i = 0; i < pool.Count; i++)
-        {
-            if (pool[i].gameObject.activeSelf)
+            for (int i = 0; i < pool.Count; i++)
             {
-                continue;
-            }
-
-            int entryIndex = poolEntryIndices[i];
-
-            if (entries[entryIndex].Prefab != requestedPrefab)
-            {
-                continue;
-            }
-
-            pool[i].Activate(startPosition);
-            return pool[i];
-        }
-
-        return null;
-    }
-
-    public void DespawnAllEnemies()
-    {
-        for (int i = 0; i < pool.Count; i++)
-        {
-            pool[i].gameObject.SetActive(false);
-        }
-    }
-
-    private bool IsInRoster(EnemyBase prefab)
-    {
-        for (int i = 0; i < entries.Length; i++)
-        {
-            if (entries[i].Prefab == prefab)
-            {
-                return true;
+                pool[i].gameObject.SetActive(false);
             }
         }
 
-        return false;
-    }
-
-    private void TrySpawnRandomEnemy()
-    {
-        if (CountActiveEnemies() >= GetMaximumActiveEnemies())
+        private bool IsInRoster(EnemyBase prefab)
         {
-            return;
-        }
-
-        EnemyBase enemy = PickAvailableEnemy();
-
-        if (enemy == null)
-        {
-            return;
-        }
-
-        enemy.Activate(new Vector3(spawnX, PickSpawnHeight(), 0f));
-    }
-
-    private EnemyBase PickAvailableEnemy()
-    {
-        availableEnemies.Clear();
-        int floor = floorManager.CurrentFloorIndex;
-
-        for (int i = 0; i < pool.Count; i++)
-        {
-            if (pool[i].gameObject.activeSelf)
+            for (int i = 0; i < entries.Length; i++)
             {
-                continue;
+                if (entries[i].Prefab == prefab)
+                {
+                    return true;
+                }
             }
 
-            if (CanAppearOnFloor(entries[poolEntryIndices[i]], floor) == false)
+            return false;
+        }
+
+        private void TrySpawnRandomEnemy()
+        {
+            if (CountActiveEnemies() >= GetMaximumActiveEnemies())
             {
-                continue;
+                return;
             }
 
-            availableEnemies.Add(pool[i]);
-        }
+            EnemyBase enemy = PickAvailableEnemy();
 
-        if (availableEnemies.Count == 0)
-        {
-            return null;
-        }
-
-        return availableEnemies[Random.Range(0, availableEnemies.Count)];
-    }
-
-    private BulletPool GetBulletPool(EnemyEntry entry)
-    {
-        if (entry.BulletPool != null)
-        {
-            return entry.BulletPool;
-        }
-
-        return defaultBulletPool;
-    }
-
-    private int GetMaximumActiveEnemies()
-    {
-        if (maxActivePerFloor.Length == 0)
-        {
-            return 1;
-        }
-
-        int floor = floorManager.CurrentFloorIndex;
-
-        if (floor >= maxActivePerFloor.Length)
-        {
-            return maxActivePerFloor[maxActivePerFloor.Length - 1];
-        }
-
-        return maxActivePerFloor[floor];
-    }
-
-    private bool CanAppearOnFloor(EnemyEntry entry, int floor)
-    {
-        for (int i = 0; i < entry.Floors.Length; i++)
-        {
-            if (entry.Floors[i] == floor)
+            if (enemy == null)
             {
-                return true;
+                return;
             }
+
+            enemy.Activate(new Vector3(spawnX, PickSpawnHeight(), 0f));
         }
 
-        return false;
-    }
-
-    private float PickSpawnHeight()
-    {
-        float playerY = player.position.y;
-        float above = playerY + minOffsetFromPlayer;
-        float below = playerY - minOffsetFromPlayer;
-
-        if (above > maxY)
+        private EnemyBase PickAvailableEnemy()
         {
-            return Random.Range(minY, below);
+            availableEnemies.Clear();
+            int floor = floorManager.CurrentFloorIndex;
+
+            for (int i = 0; i < pool.Count; i++)
+            {
+                if (pool[i].gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                if (CanAppearOnFloor(entries[poolEntryIndices[i]], floor) == false)
+                {
+                    continue;
+                }
+
+                availableEnemies.Add(pool[i]);
+            }
+
+            if (availableEnemies.Count == 0)
+            {
+                return null;
+            }
+
+            return availableEnemies[Random.Range(0, availableEnemies.Count)];
         }
 
-        if (below < minY)
+        private BulletPool GetBulletPool(EnemyEntry entry)
         {
+            if (entry.BulletPool != null)
+            {
+                return entry.BulletPool;
+            }
+
+            return defaultBulletPool;
+        }
+
+        private int GetMaximumActiveEnemies()
+        {
+            if (maxActivePerFloor.Length == 0)
+            {
+                return 1;
+            }
+
+            int floor = floorManager.CurrentFloorIndex;
+
+            if (floor >= maxActivePerFloor.Length)
+            {
+                return maxActivePerFloor[maxActivePerFloor.Length - 1];
+            }
+
+            return maxActivePerFloor[floor];
+        }
+
+        private bool CanAppearOnFloor(EnemyEntry entry, int floor)
+        {
+            for (int i = 0; i < entry.Floors.Length; i++)
+            {
+                if (entry.Floors[i] == floor)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private float PickSpawnHeight()
+        {
+            float playerY = player.position.y;
+            float above = playerY + minOffsetFromPlayer;
+            float below = playerY - minOffsetFromPlayer;
+
+            if (above > maxY)
+            {
+                return Random.Range(minY, below);
+            }
+
+            if (below < minY)
+            {
+                return Random.Range(above, maxY);
+            }
+
+            if (Random.value < 0.5f)
+            {
+                return Random.Range(minY, below);
+            }
+
             return Random.Range(above, maxY);
         }
 
-        if (Random.value < 0.5f)
+        private int CountActiveEnemies()
         {
-            return Random.Range(minY, below);
-        }
+            int count = 0;
 
-        return Random.Range(above, maxY);
-    }
-
-    private int CountActiveEnemies()
-    {
-        int count = 0;
-
-        for (int i = 0; i < pool.Count; i++)
-        {
-            if (pool[i].gameObject.activeSelf)
+            for (int i = 0; i < pool.Count; i++)
             {
-                count = count + 1;
+                if (pool[i].gameObject.activeSelf)
+                {
+                    count = count + 1;
+                }
             }
-        }
 
-        return count;
+            return count;
+        }
     }
 }

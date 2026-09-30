@@ -1,225 +1,232 @@
+// Gestisce il movimento, il ritardo di esplosione e i danni di una mina aerea.
 using UnityEngine;
+using BeyondSky.Audio;
+using BeyondSky.Player;
+using BeyondSky.Systems;
 
-public enum AerialMineState
+namespace BeyondSky.Boss
 {
-    Travelling,
-    Armed,
-    Exploding
-}
-
-public class AerialMine : MonoBehaviour
-{
-    [Header("Visuals")]
-    [SerializeField] private SpriteRenderer mineRenderer;
-    [SerializeField] private GameObject explosionVisual;
-    [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color warningColor = Color.red;
-    [SerializeField] private float warningFlashSpeed = 12f;
-
-    [Header("Mine")]
-    [SerializeField] private LayerMask playerLayers;
-    [SerializeField] private float mineContactRadius = 0.45f;
-    [SerializeField] private float armedDuration = 1.25f;
-
-    [Header("Explosion")]
-    [SerializeField] private float explosionRadius = 1.8f;
-    [SerializeField] private float explosionDuration = 0.8f;
-
-    private AerialMineState state;
-    private Vector3 travelStart;
-    private Vector3 travelDestination;
-    private float travelDuration;
-    private float currentArmedDuration;
-    private float stateTimer;
-    private SpeedManager speedManager;
-
-    public void Setup(SpeedManager worldSpeedManager)
+    public enum AerialMineState
     {
-        speedManager = worldSpeedManager;
+        Travelling,
+        Armed,
+        Exploding
     }
 
-    public void Deploy(Vector3 startPosition, Vector3 destination, float duration)
+    public class AerialMine : MonoBehaviour
     {
-        Deploy(startPosition, destination, duration, armedDuration);
-    }
+        [Header("Visuals")]
+        [SerializeField] private SpriteRenderer mineRenderer;
+        [SerializeField] private GameObject explosionVisual;
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color warningColor = Color.red;
+        [SerializeField] private float warningFlashSpeed = 12f;
 
-    public void Deploy(Vector3 startPosition, Vector3 destination, float duration, float fuseDuration)
-    {
-        currentArmedDuration = Mathf.Max(0.05f, fuseDuration);
-        transform.position = startPosition;
-        transform.rotation = Quaternion.identity;
+        [Header("Mine")]
+        [SerializeField] private LayerMask playerLayers;
+        [SerializeField] private float mineContactRadius = 0.45f;
+        [SerializeField] private float armedDuration = 1.25f;
 
-        travelStart = startPosition;
-        travelDestination = destination;
-        travelDuration = Mathf.Max(0.01f, duration);
-        stateTimer = 0f;
-        state = AerialMineState.Travelling;
+        [Header("Explosion")]
+        [SerializeField] private float explosionRadius = 1.8f;
+        [SerializeField] private float explosionDuration = 0.8f;
 
-        SetMineColor(normalColor);
-        SetVisuals(true, false);
-        gameObject.SetActive(true);
-    }
+        private AerialMineState state;
+        private Vector3 travelStart;
+        private Vector3 travelDestination;
+        private float travelDuration;
+        private float currentArmedDuration;
+        private float stateTimer;
+        private SpeedManager speedManager;
 
-    public void Despawn()
-    {
-        gameObject.SetActive(false);
-    }
-
-    private void OnDisable()
-    {
-        SetMineColor(normalColor);
-        SetVisuals(true, false);
-    }
-
-    private void Update()
-    {
-        float deltaTime = Time.deltaTime;
-        stateTimer = stateTimer + deltaTime;
-
-        if (state == AerialMineState.Travelling)
+        public void Setup(SpeedManager worldSpeedManager)
         {
-            UpdateTravelling();
-        }
-        else if (state == AerialMineState.Armed)
-        {
-            UpdateArmed(deltaTime);
-        }
-        else if (state == AerialMineState.Exploding)
-        {
-            UpdateExplosion(deltaTime);
-        }
-    }
-
-    private void UpdateTravelling()
-    {
-        float progress = Mathf.Clamp01(stateTimer / travelDuration);
-        transform.position = Vector3.Lerp(travelStart, travelDestination, progress);
-
-        if (progress < 1f)
-        {
-            return;
+            speedManager = worldSpeedManager;
         }
 
-        transform.position = travelDestination;
-        state = AerialMineState.Armed;
-        stateTimer = 0f;
-    }
-
-    private void UpdateArmed(float deltaTime)
-    {
-        MoveWithWorld(deltaTime);
-
-        float blend = Mathf.PingPong(Time.time * warningFlashSpeed, 1f);
-        SetMineColor(Color.Lerp(normalColor, warningColor, blend));
-
-        if (IsPlayerTouchingMine())
+        public void Deploy(Vector3 startPosition, Vector3 destination, float duration)
         {
+            Deploy(startPosition, destination, duration, armedDuration);
+        }
+
+        public void Deploy(Vector3 startPosition, Vector3 destination, float duration, float fuseDuration)
+        {
+            currentArmedDuration = Mathf.Max(0.05f, fuseDuration);
+            transform.position = startPosition;
+            transform.rotation = Quaternion.identity;
+
+            travelStart = startPosition;
+            travelDestination = destination;
+            travelDuration = Mathf.Max(0.01f, duration);
+            stateTimer = 0f;
+            state = AerialMineState.Travelling;
+
+            SetMineColor(normalColor);
+            SetVisuals(true, false);
+            gameObject.SetActive(true);
+        }
+
+        public void Despawn()
+        {
+            gameObject.SetActive(false);
+        }
+
+        private void OnDisable()
+        {
+            SetMineColor(normalColor);
+            SetVisuals(true, false);
+        }
+
+        private void Update()
+        {
+            float deltaTime = Time.deltaTime;
+            stateTimer = stateTimer + deltaTime;
+
+            if (state == AerialMineState.Travelling)
+            {
+                UpdateTravelling();
+            }
+            else if (state == AerialMineState.Armed)
+            {
+                UpdateArmed(deltaTime);
+            }
+            else if (state == AerialMineState.Exploding)
+            {
+                UpdateExplosion(deltaTime);
+            }
+        }
+
+        private void UpdateTravelling()
+        {
+            float progress = Mathf.Clamp01(stateTimer / travelDuration);
+            transform.position = Vector3.Lerp(travelStart, travelDestination, progress);
+
+            if (progress < 1f)
+            {
+                return;
+            }
+
+            transform.position = travelDestination;
+            state = AerialMineState.Armed;
+            stateTimer = 0f;
+        }
+
+        private void UpdateArmed(float deltaTime)
+        {
+            MoveWithWorld(deltaTime);
+
+            float blend = Mathf.PingPong(Time.time * warningFlashSpeed, 1f);
+            SetMineColor(Color.Lerp(normalColor, warningColor, blend));
+
+            if (IsPlayerTouchingMine())
+            {
+                BeginExplosion();
+                return;
+            }
+
+            if (stateTimer < currentArmedDuration)
+            {
+                return;
+            }
+
             BeginExplosion();
-            return;
         }
 
-        if (stateTimer < currentArmedDuration)
+        private bool IsPlayerTouchingMine()
         {
-            return;
+            Collider2D hit = Physics2D.OverlapCircle(
+                transform.position,
+                mineContactRadius,
+                playerLayers);
+
+            return hit != null;
         }
 
-        BeginExplosion();
-    }
-
-    private bool IsPlayerTouchingMine()
-    {
-        Collider2D hit = Physics2D.OverlapCircle(
-            transform.position,
-            mineContactRadius,
-            playerLayers);
-
-        return hit != null;
-    }
-
-    private void BeginExplosion()
-    {
-        state = AerialMineState.Exploding;
-        AudioSignals.Play(GameSound.Explosion);
-        stateTimer = 0f;
-        SetMineColor(normalColor);
-        SetVisuals(false, true);
-        DamagePlayerInsideExplosion();
-    }
-
-    private void UpdateExplosion(float deltaTime)
-    {
-        MoveWithWorld(deltaTime);
-        DamagePlayerInsideExplosion();
-
-        if (stateTimer < explosionDuration)
+        private void BeginExplosion()
         {
-            return;
+            state = AerialMineState.Exploding;
+            AudioSignals.Play(GameSound.Explosion);
+            stateTimer = 0f;
+            SetMineColor(normalColor);
+            SetVisuals(false, true);
+            DamagePlayerInsideExplosion();
         }
 
-        Despawn();
-    }
-
-    private void MoveWithWorld(float deltaTime)
-    {
-        if (speedManager == null)
+        private void UpdateExplosion(float deltaTime)
         {
-            return;
+            MoveWithWorld(deltaTime);
+            DamagePlayerInsideExplosion();
+
+            if (stateTimer < explosionDuration)
+            {
+                return;
+            }
+
+            Despawn();
         }
 
-        Vector3 position = transform.position;
-        position.x = position.x - speedManager.CurrentSpeed * deltaTime;
-        transform.position = position;
-    }
-
-    private void DamagePlayerInsideExplosion()
-    {
-        Collider2D hit = Physics2D.OverlapCircle(
-            transform.position,
-            explosionRadius,
-            playerLayers);
-
-        if (hit == null)
+        private void MoveWithWorld(float deltaTime)
         {
-            return;
+            if (speedManager == null)
+            {
+                return;
+            }
+
+            Vector3 position = transform.position;
+            position.x = position.x - speedManager.CurrentSpeed * deltaTime;
+            transform.position = position;
         }
 
-        PlaneCollision plane = hit.GetComponentInParent<PlaneCollision>();
-
-        if (plane != null)
+        private void DamagePlayerInsideExplosion()
         {
-            plane.TakeHit();
-        }
-    }
+            Collider2D hit = Physics2D.OverlapCircle(
+                transform.position,
+                explosionRadius,
+                playerLayers);
 
-    private void SetMineColor(Color color)
-    {
-        if (mineRenderer == null)
+            if (hit == null)
+            {
+                return;
+            }
+
+            PlaneCollision plane = hit.GetComponentInParent<PlaneCollision>();
+
+            if (plane != null)
+            {
+                plane.TakeHit();
+            }
+        }
+
+        private void SetMineColor(Color color)
         {
-            return;
+            if (mineRenderer == null)
+            {
+                return;
+            }
+
+            mineRenderer.color = color;
         }
 
-        mineRenderer.color = color;
-    }
-
-    private void SetVisuals(bool showMine, bool showExplosion)
-    {
-        if (mineRenderer != null)
+        private void SetVisuals(bool showMine, bool showExplosion)
         {
-            mineRenderer.enabled = showMine;
+            if (mineRenderer != null)
+            {
+                mineRenderer.enabled = showMine;
+            }
+
+            if (explosionVisual != null && explosionVisual != gameObject)
+            {
+                explosionVisual.SetActive(showExplosion);
+            }
         }
 
-        if (explosionVisual != null && explosionVisual != gameObject)
+        private void OnDrawGizmosSelected()
         {
-            explosionVisual.SetActive(showExplosion);
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, mineContactRadius);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, explosionRadius);
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, mineContactRadius);
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, explosionRadius);
     }
 }

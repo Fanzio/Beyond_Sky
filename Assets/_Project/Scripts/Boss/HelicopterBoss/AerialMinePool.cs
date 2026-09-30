@@ -1,59 +1,64 @@
+// Fornisce e riutilizza le mine aeree.
 using System.Collections.Generic;
 using UnityEngine;
+using BeyondSky.Systems;
 
-public class AerialMinePool : MonoBehaviour
+namespace BeyondSky.Boss
 {
-    [Header("Pool")]
-    [SerializeField] private AerialMine minePrefab;
-    [SerializeField] private int poolSize = 6;
-
-    [Header("World movement")]
-    [SerializeField] private SpeedManager speedManager;
-
-    private List<AerialMine> mines = new List<AerialMine>();
-
-    private void Awake()
+    public class AerialMinePool : MonoBehaviour
     {
-        if (minePrefab == null)
-        {
-            Debug.LogError("AerialMinePool: Mine Prefab non assegnato.", this);
-            return;
-        }
+        [Header("Pool")]
+        [SerializeField] private AerialMine minePrefab;
+        [SerializeField] private int poolSize = 6;
 
-        if (speedManager == null)
-        {
-            Debug.LogWarning("AerialMinePool: Speed Manager non assegnato. Le mine non scorreranno.", this);
-        }
+        [Header("World movement")]
+        [SerializeField] private SpeedManager speedManager;
 
-        for (int i = 0; i < poolSize; i++)
-        {
-            AerialMine mine = Instantiate(minePrefab, transform);
-            mine.Setup(speedManager);
-            mine.gameObject.SetActive(false);
-            mines.Add(mine);
-        }
-    }
+        private List<AerialMine> mines = new List<AerialMine>();
 
-    public AerialMine GetMine()
-    {
-        for (int i = 0; i < mines.Count; i++)
+        private void Awake()
         {
-            if (mines[i].gameObject.activeSelf)
+            if (minePrefab == null)
             {
-                continue;
+                Debug.LogError("AerialMinePool: Mine Prefab non assegnato.", this);
+                return;
             }
 
-            return mines[i];
+            if (speedManager == null)
+            {
+                Debug.LogWarning("AerialMinePool: Speed Manager non assegnato. Le mine non scorreranno.", this);
+            }
+
+            for (int i = 0; i < poolSize; i++)
+            {
+                AerialMine mine = Instantiate(minePrefab, transform);
+                mine.Setup(speedManager);
+                mine.gameObject.SetActive(false);
+                mines.Add(mine);
+            }
         }
 
-        return null;
-    }
-
-    public void DespawnAll()
-    {
-        for (int i = 0; i < mines.Count; i++)
+        public AerialMine GetMine()
         {
-            mines[i].Despawn();
+            for (int i = 0; i < mines.Count; i++)
+            {
+                if (mines[i].gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                return mines[i];
+            }
+
+            return null;
+        }
+
+        public void DespawnAll()
+        {
+            for (int i = 0; i < mines.Count; i++)
+            {
+                mines[i].Despawn();
+            }
         }
     }
 }

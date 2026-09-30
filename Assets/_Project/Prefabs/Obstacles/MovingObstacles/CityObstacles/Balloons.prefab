@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1430187523027189781}
   - component: {fileID: 3661109821860392443}
   - component: {fileID: 1509797916885786711}
-  - component: {fileID: 175418590010573444}
   m_Layer: 7
   m_Name: Balloon
   m_TagString: Untagged
@@ -28,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 3099102919439466919}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.21533188, w: 0.9765409}
-  m_LocalPosition: {x: -7.77, y: -0.48, z: 0.021333823}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -98,19 +97,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 362f88525df9b104b8343a09c969fb6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &175418590010573444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3099102919439466919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7317f6038f14f5f4c871bd89dc8c662f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  verticalSpeed: 1.8
 --- !u!1 &3703435413879928896
 GameObject:
   m_ObjectHideFlags: 0
@@ -122,7 +108,6 @@ GameObject:
   - component: {fileID: 6867126954044212827}
   - component: {fileID: 6474042063444074935}
   - component: {fileID: 1480853032952030504}
-  - component: {fileID: 5422116399653876266}
   m_Layer: 7
   m_Name: Balloon
   m_TagString: Untagged
@@ -139,7 +124,7 @@ Transform:
   m_GameObject: {fileID: 3703435413879928896}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.14625572, w: 0.9892469}
-  m_LocalPosition: {x: -7.64, y: -0.55, z: 0.021333823}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -209,19 +194,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 362f88525df9b104b8343a09c969fb6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &5422116399653876266
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3703435413879928896}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7317f6038f14f5f4c871bd89dc8c662f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  verticalSpeed: 1.8
 --- !u!1 &4734159334342638011
 GameObject:
   m_ObjectHideFlags: 0
@@ -233,6 +205,7 @@ GameObject:
   - component: {fileID: 8525876574947491116}
   - component: {fileID: 5660889789580188342}
   - component: {fileID: 4524678885797048841}
+  - component: {fileID: 1724015349992662578}
   m_Layer: 7
   m_Name: Balloons
   m_TagString: Untagged
@@ -303,7 +276,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -7.707689, y: 1.3609973}
+  m_Offset: {x: 0.01623869, y: 1.6725729}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -314,8 +287,20 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.749938, y: 3.555342}
+  m_Size: {x: 1.4222031, y: 3.04606}
   m_EdgeRadius: 0
+--- !u!114 &1724015349992662578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4734159334342638011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 362f88525df9b104b8343a09c969fb6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8186771538297709759
 GameObject:
   m_ObjectHideFlags: 0
@@ -327,7 +312,6 @@ GameObject:
   - component: {fileID: 5501060027194674313}
   - component: {fileID: 8252414275064058748}
   - component: {fileID: 3256006046647879511}
-  - component: {fileID: 6127046999028795559}
   m_Layer: 7
   m_Name: Balloon
   m_TagString: Untagged
@@ -344,7 +328,7 @@ Transform:
   m_GameObject: {fileID: 8186771538297709759}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -7.73, y: -0.30082318, z: 0.021333823}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -414,16 +398,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 362f88525df9b104b8343a09c969fb6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &6127046999028795559
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8186771538297709759}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7317f6038f14f5f4c871bd89dc8c662f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  verticalSpeed: 1.8

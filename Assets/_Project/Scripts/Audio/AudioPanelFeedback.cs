@@ -1,9 +1,13 @@
+// Riproduce un suono quando viene aperto un pannello.
 using UnityEngine;
 
-public class AudioPanelFeedback : MonoBehaviour
+namespace BeyondSky.Audio
 {
-    private void OnEnable()
+    public class AudioPanelFeedback : MonoBehaviour
     {
-        AudioSignals.Play(GameSound.UIPanelOpen);
+        private void OnEnable()
+        {
+            AudioSignals.Play(GameSound.UIPanelOpen);
+        }
     }
 }

@@ -1,38 +1,42 @@
+// Adatta l’area della UI alla parte utilizzabile dello schermo.
 using UnityEngine;
 
-public class UISafeArea : MonoBehaviour
+namespace BeyondSky.UI
 {
-    private RectTransform area;
-    private Rect previous;
-    private int previousWidth;
-    private int previousHeight;
-
-    private void OnEnable()
+    public class UISafeArea : MonoBehaviour
     {
-        area = GetComponent<RectTransform>();
-        Apply();
-    }
+        private RectTransform area;
+        private Rect previous;
+        private int previousWidth;
+        private int previousHeight;
 
-    private void Update()
-    {
-        if (previous != Screen.safeArea || previousWidth != Screen.width || previousHeight != Screen.height)
+        private void OnEnable()
         {
+            area = GetComponent<RectTransform>();
             Apply();
         }
-    }
 
-    private void Apply()
-    {
-        if (Screen.width <= 0 || Screen.height <= 0)
+        private void Update()
         {
-            return;
+            if (previous != Screen.safeArea || previousWidth != Screen.width || previousHeight != Screen.height)
+            {
+                Apply();
+            }
         }
-        previous = Screen.safeArea;
-        previousWidth = Screen.width;
-        previousHeight = Screen.height;
-        area.anchorMin = new Vector2(previous.xMin / Screen.width, previous.yMin / Screen.height);
-        area.anchorMax = new Vector2(previous.xMax / Screen.width, previous.yMax / Screen.height);
-        area.offsetMin = Vector2.zero;
-        area.offsetMax = Vector2.zero;
+
+        private void Apply()
+        {
+            if (Screen.width <= 0 || Screen.height <= 0)
+            {
+                return;
+            }
+            previous = Screen.safeArea;
+            previousWidth = Screen.width;
+            previousHeight = Screen.height;
+            area.anchorMin = new Vector2(previous.xMin / Screen.width, previous.yMin / Screen.height);
+            area.anchorMax = new Vector2(previous.xMax / Screen.width, previous.yMax / Screen.height);
+            area.offsetMin = Vector2.zero;
+            area.offsetMax = Vector2.zero;
+        }
     }
 }

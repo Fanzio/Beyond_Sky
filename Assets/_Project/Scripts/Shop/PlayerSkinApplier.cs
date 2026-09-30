@@ -1,22 +1,26 @@
+// Applica al velivolo la skin selezionata nel negozio.
 using UnityEngine;
 
-[DefaultExecutionOrder(-200)]
-public class PlayerSkinApplier : MonoBehaviour
+namespace BeyondSky.Shop
 {
-    [SerializeField] private SpriteRenderer visual;
-    [SerializeField] private SkinDatabase database;
-    [SerializeField] private SkinSave skinSave;
-
-    private void Awake()
+    [DefaultExecutionOrder(-200)]
+    public class PlayerSkinApplier : MonoBehaviour
     {
-        if (visual == null || database == null || skinSave == null)
+        [SerializeField] private SpriteRenderer visual;
+        [SerializeField] private SkinDatabase database;
+        [SerializeField] private SkinSave skinSave;
+
+        private void Awake()
         {
-            return;
-        }
-        SkinEntry entry = database.GetSkin(skinSave.GetEquipped());
-        if (entry != null && entry.Sprite != null)
-        {
-            visual.sprite = entry.Sprite;
+            if (visual == null || database == null || skinSave == null)
+            {
+                return;
+            }
+            SkinEntry entry = database.GetSkin(skinSave.GetEquipped());
+            if (entry != null && entry.Sprite != null)
+            {
+                visual.sprite = entry.Sprite;
+            }
         }
     }
 }

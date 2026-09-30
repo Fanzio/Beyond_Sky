@@ -1,64 +1,76 @@
+// Conserva le regole del chunk e ripristina i suoi elementi quando viene riutilizzato.
 using UnityEngine;
+using BeyondSky.Obstacles;
 
-public class Chunk : MonoBehaviour
+namespace BeyondSky.World
 {
-    [Header("Spawn rules")]
-    [SerializeField] private int bandIndex = -1;
-    [SerializeField] private bool isArena;
-
-    private Pickup[] pickups;
-    private Obstacle[] obstacles;
-    private MovingObstacle[] movingObstacles;
-    private VerticalObstacle[] verticalObstacles;
-
-    public int BandIndex
+    public class Chunk : MonoBehaviour
     {
-        get { return bandIndex; }
-    }
+        [Header("Spawn rules")]
+        [SerializeField] private int bandIndex = -1;
+        [SerializeField] private bool isArena;
+        [Range(0, 2)]
+        [SerializeField] private int difficultyTier;
 
-    public bool IsArena
-    {
-        get { return isArena; }
-    }
-
-    private void Awake()
-    {
-        pickups = GetComponentsInChildren<Pickup>(true);
-        obstacles = GetComponentsInChildren<Obstacle>(true);
-        movingObstacles = GetComponentsInChildren<MovingObstacle>(true);
-        verticalObstacles = GetComponentsInChildren<VerticalObstacle>(true);
-
-        for (int i = 0; i < movingObstacles.Length; i++)
+        public int DifficultyTier
         {
-            movingObstacles[i].CaptureStart();
+            get { return difficultyTier; }
         }
 
-        for (int i = 0; i < verticalObstacles.Length; i++)
-        {
-            verticalObstacles[i].CaptureStart();
-        }
-    }
+        private Pickup[] pickups;
+        private Obstacle[] obstacles;
+        private MovingObstacle[] movingObstacles;
+        private VerticalObstacle[] verticalObstacles;
 
-    private void OnEnable()
-    {
-        for (int i = 0; i < pickups.Length; i++)
+        public int BandIndex
         {
-            pickups[i].ResetPickup();
+            get { return bandIndex; }
         }
 
-        for (int i = 0; i < obstacles.Length; i++)
+        public bool IsArena
         {
-            obstacles[i].ResetObstacle();
+            get { return isArena; }
         }
 
-        for (int i = 0; i < movingObstacles.Length; i++)
+        private void Awake()
         {
-            movingObstacles[i].ResetPosition();
+            pickups = GetComponentsInChildren<Pickup>(true);
+            obstacles = GetComponentsInChildren<Obstacle>(true);
+            movingObstacles = GetComponentsInChildren<MovingObstacle>(true);
+            verticalObstacles = GetComponentsInChildren<VerticalObstacle>(true);
+
+            for (int i = 0; i < movingObstacles.Length; i++)
+            {
+                movingObstacles[i].CaptureStart();
+            }
+
+            for (int i = 0; i < verticalObstacles.Length; i++)
+            {
+                verticalObstacles[i].CaptureStart();
+            }
         }
 
-        for (int i = 0; i < verticalObstacles.Length; i++)
+        private void OnEnable()
         {
-            verticalObstacles[i].ResetPosition();
+            for (int i = 0; i < pickups.Length; i++)
+            {
+                pickups[i].ResetPickup();
+            }
+
+            for (int i = 0; i < obstacles.Length; i++)
+            {
+                obstacles[i].ResetObstacle();
+            }
+
+            for (int i = 0; i < movingObstacles.Length; i++)
+            {
+                movingObstacles[i].ResetPosition();
+            }
+
+            for (int i = 0; i < verticalObstacles.Length; i++)
+            {
+                verticalObstacles[i].ResetPosition();
+            }
         }
     }
 }

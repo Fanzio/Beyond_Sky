@@ -1,69 +1,74 @@
+// Attiva lo scudo e lo consuma quando assorbe un colpo.
 using UnityEngine;
+using BeyondSky.Audio;
 
-public class PlaneShield : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("Visual")]
-    [SerializeField] private SpriteRenderer shieldVisual;
-
-    [Header("Break")]
-    [SerializeField] private float breakInvulnerabilityTime = 0.7f;
-
-    private bool hasShield;
-    private float invulnerabilityTimer;
-
-    public bool HasShield
+    public class PlaneShield : MonoBehaviour
     {
-        get { return hasShield; }
-    }
+        [Header("Visual")]
+        [SerializeField] private SpriteRenderer shieldVisual;
 
-    public bool IsInvulnerable
-    {
-        get { return invulnerabilityTimer > 0f; }
-    }
+        [Header("Break")]
+        [SerializeField] private float breakInvulnerabilityTime = 0.7f;
 
-    private void Awake()
-    {
-        UpdateVisual();
-    }
+        private bool hasShield;
+        private float invulnerabilityTimer;
 
-    private void Update()
-    {
-        if (invulnerabilityTimer <= 0f)
+        public bool HasShield
         {
-            return;
+            get { return hasShield; }
         }
 
-        invulnerabilityTimer = invulnerabilityTimer - Time.deltaTime;
-    }
-
-    public void GrantShield()
-    {
-        hasShield = true;
-        AudioSignals.Play(GameSound.ShieldPickup);
-        UpdateVisual();
-    }
-
-    public bool ConsumeShield()
-    {
-        if (hasShield == false)
+        public bool IsInvulnerable
         {
-            return false;
+            get { return invulnerabilityTimer > 0f; }
         }
 
-        hasShield = false;
-        AudioSignals.Play(GameSound.ShieldBreak);
-        invulnerabilityTimer = breakInvulnerabilityTime;
-        UpdateVisual();
-        return true;
-    }
-
-    private void UpdateVisual()
-    {
-        if (shieldVisual == null)
+        private void Awake()
         {
-            return;
+            UpdateVisual();
         }
 
-        shieldVisual.enabled = hasShield;
+        private void Update()
+        {
+            if (invulnerabilityTimer <= 0f)
+            {
+                return;
+            }
+
+            invulnerabilityTimer = invulnerabilityTimer - Time.deltaTime;
+        }
+
+        public void GrantShield()
+        {
+            hasShield = true;
+            AudioSignals.Play(GameSound.ShieldPickup);
+            UpdateVisual();
+        }
+
+        public bool ConsumeShield()
+        {
+            if (hasShield == false)
+            {
+                return false;
+            }
+
+            hasShield = false;
+            AudioSignals.Play(GameSound.ShieldBreak);
+            invulnerabilityTimer = breakInvulnerabilityTime;
+            UpdateVisual();
+            return true;
+        }
+
+        private void UpdateVisual()
+        {
+            if (shieldVisual == null)
+            {
+                return;
+            }
+
+            shieldVisual.enabled = hasShield;
+        }
     }
 }

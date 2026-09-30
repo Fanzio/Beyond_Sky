@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8965469935840419889}
   - component: {fileID: 106543890083006632}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DroneVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 1441745447448393336}
   - component: {fileID: 4405753560758577722}
   - component: {fileID: 5779639652048837292}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: ZoneBeam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -199,7 +199,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3569942710972443380}
   - component: {fileID: 2440169247044334440}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: UpperLaserZoneDrone
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -214,7 +214,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182921348952793968}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 28, y: 14, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

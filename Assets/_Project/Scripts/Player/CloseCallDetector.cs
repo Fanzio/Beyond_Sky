@@ -1,102 +1,108 @@
+// Riconosce i passaggi ravvicinati agli ostacoli e li converte in munizioni.
 using UnityEngine;
+using BeyondSky.Audio;
+using BeyondSky.Systems;
 
-public class CloseCallDetector : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("References")]
-    [SerializeField] private SpeedManager speedManager;
-    [SerializeField] private PlaneDodge planeDodge;
-    [SerializeField] private PlaneWeapon planeWeapon;
-
-    [Header("Detection")]
-    [SerializeField] private LayerMask obstacleLayers;
-    [SerializeField] private float closeCallRadius = 1.8f;
-
-    [Header("Reward")]
-    [SerializeField] private int closeCallsPerAmmo = 3;
-
-    private Collider2D[] hits = new Collider2D[8];
-    private int progressToAmmo;
-    private float lastCloseCallTime = -10f;
-    private bool lastAwardedAmmo;
-
-    public int ProgressToAmmo
+    public class CloseCallDetector : MonoBehaviour
     {
-        get { return progressToAmmo; }
-    }
+        [Header("References")]
+        [SerializeField] private SpeedManager speedManager;
+        [SerializeField] private PlaneDodge planeDodge;
+        [SerializeField] private PlaneWeapon planeWeapon;
 
-    public int CloseCallsPerAmmo
-    {
-        get { return closeCallsPerAmmo; }
-    }
+        [Header("Detection")]
+        [SerializeField] private LayerMask obstacleLayers;
+        [SerializeField] private float closeCallRadius = 1.8f;
 
-    public bool LastAwardedAmmo
-    {
-        get { return lastAwardedAmmo; }
-    }
+        [Header("Reward")]
+        [SerializeField] private int closeCallsPerAmmo = 3;
 
-    public float TimeSinceLastCloseCall
-    {
-        get { return Time.time - lastCloseCallTime; }
-    }
+        private Collider2D[] hits = new Collider2D[8];
+        private int progressToAmmo;
+        private float lastCloseCallTime = -10f;
+        private bool lastAwardedAmmo;
 
-    private void Update()
-    {
-        if (planeDodge.IsRolling)
+        public int ProgressToAmmo
         {
-            return;
+            get { return progressToAmmo; }
         }
 
-        float step = speedManager.CurrentSpeed * Time.deltaTime;
-        float planeX = transform.position.x;
-
-        int count = Physics2D.OverlapCircleNonAlloc(
-            transform.position, closeCallRadius, hits, obstacleLayers);
-
-        for (int i = 0; i < count; i++)
+        public int CloseCallsPerAmmo
         {
-            if (HasJustCrossed(hits[i], planeX, step) == false)
+            get { return closeCallsPerAmmo; }
+        }
+
+        public bool LastAwardedAmmo
+        {
+            get { return lastAwardedAmmo; }
+        }
+
+        public float TimeSinceLastCloseCall
+        {
+            get { return Time.time - lastCloseCallTime; }
+        }
+
+        private void Update()
+        {
+            if (planeDodge.IsRolling)
             {
-                continue;
+                return;
             }
-            Award();
+
+            float step = speedManager.CurrentSpeed * Time.deltaTime;
+            float planeX = transform.position.x;
+
+            int count = Physics2D.OverlapCircleNonAlloc(
+                transform.position, closeCallRadius, hits, obstacleLayers);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (HasJustCrossed(hits[i], planeX, step) == false)
+                {
+                    continue;
+                }
+                Award();
+            }
         }
-    }
 
-    private bool HasJustCrossed(Collider2D obstacle, float planeX, float step)
-    {
-        float x = obstacle.bounds.center.x;
-
-        if (x > planeX)
+        private bool HasJustCrossed(Collider2D obstacle, float planeX, float step)
         {
-            return false;
+            float x = obstacle.bounds.center.x;
+
+            if (x > planeX)
+            {
+                return false;
+            }
+            if (x + step <= planeX)
+            {
+                return false;
+            }
+            return true;
         }
-        if (x + step <= planeX)
+
+        private void Award()
         {
-            return false;
+            lastCloseCallTime = Time.time;
+            progressToAmmo = progressToAmmo + 1;
+            AudioSignals.PlayCloseCall(progressToAmmo, closeCallsPerAmmo);
+            lastAwardedAmmo = false;
+
+            if (progressToAmmo < closeCallsPerAmmo)
+            {
+                return;
+            }
+
+            progressToAmmo = 0;
+            lastAwardedAmmo = true;
+            planeWeapon.AddAmmo(1);
         }
-        return true;
-    }
 
-    private void Award()
-    {
-        lastCloseCallTime = Time.time;
-        progressToAmmo = progressToAmmo + 1;
-        AudioSignals.PlayCloseCall(progressToAmmo, closeCallsPerAmmo);
-        lastAwardedAmmo = false;
-
-        if (progressToAmmo < closeCallsPerAmmo)
+        private void OnDrawGizmosSelected()
         {
-            return;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, closeCallRadius);
         }
-
-        progressToAmmo = 0;
-        lastAwardedAmmo = true;
-        planeWeapon.AddAmmo(1);
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, closeCallRadius);
     }
 }

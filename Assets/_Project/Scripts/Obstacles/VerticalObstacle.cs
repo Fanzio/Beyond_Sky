@@ -1,35 +1,39 @@
+// Gestisce il movimento verticale di un ostacolo entro i suoi limiti.
 using UnityEngine;
 
-public class VerticalObstacle : MonoBehaviour
+namespace BeyondSky.Obstacles
 {
-    [Header("Vertical drift - positive rises")]
-    [Range(-6f, 6f)]
-    [SerializeField] private float verticalSpeed = 2f;
-
-    private Vector3 startLocalPosition;
-    private bool hasCaptured;
-
-    public void CaptureStart()
+    public class VerticalObstacle : MonoBehaviour
     {
-        if (hasCaptured)
+        [Header("Vertical drift - positive rises")]
+        [Range(-6f, 6f)]
+        [SerializeField] private float verticalSpeed = 2f;
+
+        private Vector3 startLocalPosition;
+        private bool hasCaptured;
+
+        public void CaptureStart()
         {
-            return;
+            if (hasCaptured)
+            {
+                return;
+            }
+
+            startLocalPosition = transform.localPosition;
+            hasCaptured = true;
         }
 
-        startLocalPosition = transform.localPosition;
-        hasCaptured = true;
-    }
+        public void ResetPosition()
+        {
+            CaptureStart();
+            transform.localPosition = startLocalPosition;
+        }
 
-    public void ResetPosition()
-    {
-        CaptureStart();
-        transform.localPosition = startLocalPosition;
-    }
-
-    private void Update()
-    {
-        Vector3 position = transform.localPosition;
-        position.y = position.y + verticalSpeed * Time.deltaTime;
-        transform.localPosition = position;
+        private void Update()
+        {
+            Vector3 position = transform.localPosition;
+            position.y = position.y + verticalSpeed * Time.deltaTime;
+            transform.localPosition = position;
+        }
     }
 }

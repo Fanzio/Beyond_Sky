@@ -1,66 +1,78 @@
+// Rileva e raccoglie monete, scudi e munizioni vicini al player.
 using UnityEngine;
+using BeyondSky.Systems;
+using BeyondSky.World;
 
-public class PickupCollector : MonoBehaviour
+namespace BeyondSky.Player
 {
-    [Header("References")]
-    [SerializeField] private ScoreManager scoreManager;
-    [SerializeField] private PlaneShield planeShield;
-    [SerializeField] private PlaneWeapon planeWeapon;
-
-    [Header("Detection")]
-    [SerializeField] private LayerMask pickupLayers;
-    [SerializeField] private float pickupRadius = 1.4f;
-
-    private Collider2D[] hits = new Collider2D[8];
-
-    private void Update()
+    public class PickupCollector : MonoBehaviour
     {
-        int count = Physics2D.OverlapCircleNonAlloc(
-            transform.position, pickupRadius, hits, pickupLayers);
+        [Header("References")]
+        [SerializeField] private ScoreManager scoreManager;
+        [SerializeField] private GameManager gameManager;
+        [SerializeField] private PlaneShield planeShield;
+        [SerializeField] private PlaneWeapon planeWeapon;
 
-        for (int i = 0; i < count; i++)
+        [Header("Detection")]
+        [SerializeField] private LayerMask pickupLayers;
+        [SerializeField] private float pickupRadius = 1.4f;
+
+        private Collider2D[] hits = new Collider2D[8];
+
+        private void Update()
         {
-            Pickup pickup = hits[i].GetComponent<Pickup>();
-
-            if (pickup == null)
+            if (gameManager.IsGameOver || Time.timeScale == 0f)
             {
-                continue;
+                return;
             }
 
-            if (pickup.IsCollected)
+            int count = Physics2D.OverlapCircleNonAlloc(
+                transform.position, pickupRadius, hits, pickupLayers);
+
+            for (int i = 0; i < count; i++)
             {
-                continue;
+                Pickup pickup = hits[i].GetComponent<Pickup>();
+
+                if (pickup == null)
+                {
+                    continue;
+                }
+
+                if (pickup.IsCollected)
+                {
+                    continue;
+                }
+
+                Collect(pickup);
+            }
+        }
+
+        private void Collect(Pickup pickup)
+        {
+            pickup.Collect();
+
+            if (pickup.Type == PickupType.Coin)
+            {
+                scoreManager.AddCoin(pickup.Amount);
+                return;
             }
 
-            Collect(pickup);
+            if (pickup.Type == PickupType.Shield)
+            {
+                planeShield.GrantShield();
+                return;
+            }
+
+            if (pickup.Type == PickupType.Ammo)
+            {
+                planeWeapon.AddAmmo(pickup.Amount);
+            }
         }
-    }
 
-    private void Collect(Pickup pickup)
-    {
-        pickup.Collect();
-
-        if (pickup.Type == PickupType.Coin)
+        private void OnDrawGizmosSelected()
         {
-            scoreManager.AddCoin(pickup.Amount);
-            return;
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position, pickupRadius);
         }
-
-        if (pickup.Type == PickupType.Shield)
-        {
-            planeShield.GrantShield();
-            return;
-        }
-
-        if (pickup.Type == PickupType.Ammo)
-        {
-            planeWeapon.AddAmmo(pickup.Amount);
-        }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, pickupRadius);
     }
 }
